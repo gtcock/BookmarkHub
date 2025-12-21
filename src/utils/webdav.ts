@@ -25,23 +25,45 @@ class WebDAVService {
     }
 
     private async listBackups(client: any, baseName: string) {
-        // 使用 PROPFIND 获取文件列表
-        const xml = await client('', {
-            method: 'PROPFIND',
-            headers: { 'Depth': '1' }
-        }).text();
+        try {
+            const xml = await client('', {
+                method: 'PROPFIND',
+                headers: { 'Depth': '1' }
+            }).text();
 
-        // 简易正则解析 XML 中的 href 和 getlastmodified
-        // 注意：不同服务器返回的 href 可能是绝对路径或相对路径
-        const matches = [...xml.matchAll(/<d:response>[\s\S]*?<d:href>([\s\S]*?)<\/d:href>[\s\S]*?<d:getlastmodified>([\s\S]*?)<\/d:getlastmodified>[\s\S]*?<\/d:response>/g)];
+            // 增强版：忽略命名空间前缀 (如 d:, D:, lp1: 等)
+            const resRegex = /<[^>]*?response[^>]*?>([\s\S]*?)<\/[^>]*?response[^>]*?>/gi;
+            const hrefRegex = /<[^>]*?href[^>]*?>([\s\S]*?)<\/[^>]*?href[^>]*?>/i;
+            const dateRegex = /<[^>]*?getlastmodified[^>]*?>([\s\S]*?)<\/[^>]*?getlastmodified[^>]*?>/i;
 
-        return matches
-            .map(m => ({
-                href: decodeURIComponent(m[1]),
-                lastModified: new Date(m[2]).getTime()
-            }))
-            .filter(item => item.href.includes(baseName) && item.href.endsWith('.json'))
-            .sort((a, b) => b.lastModified - a.lastModified); // 按时间降序
+            const responses = [...xml.matchAll(resRegex)];
+            const results: any[] = [];
+
+            for (const res of responses) {
+                const resContent = res[1];
+                const hrefMatch = resContent.match(hrefRegex);
+                const dateMatch = resContent.match(dateRegex);
+
+                if (hrefMatch && dateMatch) {
+                    const href = decodeURIComponent(hrefMatch[1].trim());
+                    // 提取文件名用于后续请求，确保路径正确
+                    const fileName = href.split('/').pop() || '';
+
+                    if (fileName.includes(baseName) && fileName.endsWith('.json')) {
+                        results.push({
+                            fileName,
+                            href,
+                            lastModified: new Date(dateMatch[1]).getTime()
+                        });
+                    }
+                }
+            }
+
+            return results.sort((a, b) => b.lastModified - a.lastModified); // 按时间降序
+        } catch (e) {
+            console.error('WebDAV listBackups Error:', e);
+            return [];
+        }
     }
 
     async get() {
@@ -51,13 +73,9 @@ class WebDAVService {
             const backups = await this.listBackups(client, setting.gistFileName);
             if (backups.length === 0) return null;
 
-            // 读取最新的一个
+            // 读取最新版，优先使用文件名配合 client 进行请求
             const latest = backups[0];
-            const resp = await ky.get(latest.href, {
-                headers: {
-                    'Authorization': `Basic ${btoa(`${setting.webdavUsername}:${setting.webdavPassword}`)}`
-                }
-            }).text();
+            const resp = await client.get(latest.fileName).text();
             return resp;
         } catch (error) {
             console.error('WebDAV Download Error:', error);
@@ -83,7 +101,8 @@ class WebDAVService {
                 const toDelete = backups.slice(maxBackups);
                 for (const item of toDelete) {
                     try {
-                        await client.delete(item.href);
+                        // 使用文件名删除，确保在正确的 prefixUrl 下操作
+                        await client.delete(item.fileName);
                     } catch (e) {
                         console.error('WebDAV Cleanup Error:', e);
                     }
