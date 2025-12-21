@@ -1,7 +1,7 @@
 <!-- PROJECT LOGO -->
 <br />
 <p align="center">
-  <a href="https://github.com/dudor/BookmarkHub">
+  <a href="https://github.com/iwvw/BookmarkHub">
     <img src="images/icon128.png" alt="BookmarkHub" width="80" height="80">
   </a>
 
@@ -11,9 +11,9 @@
     <b>简约、安全、强大的跨浏览器书签同步方案</b>
     <br />
     <br />
-    <a href="https://github.com/dudor/BookmarkHub/issues">报告 Bug</a>
+    <a href="https://github.com/iwvw/BookmarkHub/issues">报告 Bug</a>
     ·
-    <a href="https://github.com/dudor/BookmarkHub/issues">提交建议</a>
+    <a href="https://github.com/iwvw/BookmarkHub/issues">提交建议</a>
     ·
     <a href="/README.md">English</a>
   </p>
@@ -112,7 +112,7 @@
 <a name="联系开发者"></a>
 ## 🤝 联系开发者
 
-**dudor**
+**iwvw**
 
-*   项目地址: [https://github.com/dudor/BookmarkHub](https://github.com/dudor/BookmarkHub)
+*   项目地址: [https://github.com/iwvw/BookmarkHub](https://github.com/iwvw/BookmarkHub)
 *   如果您觉得好用，欢迎给一个 **Star** ⭐️，这是对开发者最大的鼓励！
