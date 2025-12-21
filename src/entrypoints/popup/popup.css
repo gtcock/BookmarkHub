@@ -1,40 +1,465 @@
+/* ========================================
+   BookmarkHub Popup - Compact Button Block Style
+   ======================================== */
+
+* {
+    box-sizing: border-box !important;
+}
+
+:root {
+    --bg-main: #ffffff;
+    --text-main: #0f172a;
+    /* 更深的深蓝色文字 */
+    --text-sub: #475569;
+    /* 更深的副文本颜色 */
+    --accent: #4338ca;
+    /* 略深一点的靛蓝色 */
+    --border: #94a3b8;
+    /* 显著加深的边框颜色 */
+    --hover-bg: #f1f5f9;
+}
+
+@media (prefers-color-scheme: dark) {
+    :root {
+        --bg-main: #0f172a;
+        /* 深蓝黑色背景 */
+        --text-main: #f8fafc;
+        --text-sub: #94a3b8;
+        --accent: #818cf8;
+        --border: #475569;
+        /* 深色模式下更显眼的边框 */
+        --hover-bg: #1e293b;
+    }
+}
+
+html,
+body {
+    width: 270px !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    background-color: var(--bg-main) !important;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Hiragino Sans GB", "Microsoft YaHei", "Helvetica Neue", Helvetica, Arial, sans-serif !important;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+    overflow: hidden;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+}
+
+/* 隐藏 Chrome, Safari, Opera 的滚动条 */
+*::-webkit-scrollbar {
+    display: none;
+}
+
 #root {
-    width: 15rem;
-    min-height: 11rem;
-    height: auto;
-    position: relative;
-}
-
-.list-group-item {
-    padding: 0.25rem 1.25rem !important;
-}
-
-.card-header {
-    padding: 0.25rem 1rem !important;
-}
-
-.dropdown-menu {
-    opacity: 1 !important;
-    pointer-events: auto !important;
-    border: none !important;
     width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: 2px solid var(--border) !important;
+    border-radius: 0;
+    overflow: hidden;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
-.dropdown-item,
-.dropdown-item-text {
-    font-size: 12px !important;
-    padding: .5rem 1rem !important;
-    vertical-align: middle !important;
+/* 按钮列表容器 - 紧凑排列 */
+.menu-list {
+    display: flex;
+    flex-direction: column;
 }
 
-.dropdown-item-icon {
-    vertical-align: middle;
-    margin-right: 5px;
-    width: 1.1rem;
-    height: 1.1rem;
+.menu-row {
+    display: flex;
+    border-bottom: 1px solid var(--border);
 }
 
-.dropdown-item a,
-.dropdown-item-text a {
-    color: inherit;
+.menu-row .menu-item {
+    flex: 1;
+    border-bottom: none;
+    /* 移除内部按钮的底部边框，改用容器的 */
+}
+
+.menu-row .menu-item:first-of-type {
+    border-right: 1px solid var(--border);
+    /* 为左侧按钮添加右边框 */
+}
+
+/* 按钮样式：直角、紧贴、边框分隔 */
+.menu-item {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100% !important;
+    padding: 14px 8px;
+    background: var(--bg-main);
+    color: var(--text-main);
+    border: none;
+    border-bottom: 1px solid var(--border);
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.1s ease;
+    outline: none;
+    margin: 0 !important;
+}
+
+.msg-sub {
+    font-size: 10px;
+    font-weight: 500;
+    opacity: 0.8;
+    margin-top: 2px;
+}
+
+.sync-btn {
+    background-color: var(--hover-bg);
+}
+
+.sync-btn span {
+    font-weight: 700;
+}
+
+/* 当按钮是列表中的最后一个元素时，移除底部边框以防止与页脚边框重复 */
+.menu-list>.menu-item:last-of-type {
+    border-bottom: none;
+}
+
+.menu-item:hover {
+    background-color: var(--hover-bg);
+}
+
+.menu-item:active {
+    background-color: var(--border);
+}
+
+.menu-item:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+.menu-item-icon {
+    margin-right: 8px;
+    font-size: 17px;
+    color: var(--accent);
+    flex-shrink: 0;
+}
+
+.sync-btn .menu-item-icon {
+    font-size: 19px;
+}
+
+/* 分隔块 - 作为一个深色实心带 */
+.menu-divider {
+    height: 0;
+    /* border-bottom: 1px solid var(--border); */
+}
+
+/* 底部状态栏 - 精确对齐，无缝衔接 */
+.menu-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 12px;
+    background-color: var(--hover-bg);
+    font-size: 11px;
+    color: var(--text-sub);
+    border-top: 1px solid var(--border);
+    width: 100%;
+}
+
+/* 底部图标链接统一样式 */
+.footer-icon-link,
+.github-link {
+    color: var(--text-sub);
+    font-size: 16px;
+    display: flex;
+    align-items: center;
+    transition: all 0.2s;
+    text-decoration: none;
+}
+
+.footer-icon-link:hover,
+.github-link:hover {
+    color: var(--accent);
+    transform: scale(1.1);
+}
+
+/* 统计区域 - 工业格子风格 */
+.footer-stats-grid {
+    display: flex;
+    gap: 1px;
+    /* 格子间的空隙显示底层边框色 */
+    background-color: var(--border);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    /* 整体微圆角，也可以改为 0 */
+    overflow: hidden;
+}
+
+.stat-cell {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background-color: var(--bg-main);
+    min-width: 45px;
+    padding: 2px 4px;
+}
+
+.stat-label {
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--text-sub);
+    line-height: 1;
+    margin-bottom: 2px;
+    letter-spacing: 0;
+}
+
+.stat-value {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--text-main);
+    line-height: 1;
+}
+
+/* 修正 Modal 风格 - 全屏覆盖面板 */
+.modal-dialog {
+    margin: 0 !important;
+    max-width: none !important;
+    width: 100% !important;
+    height: 100% !important;
+    display: flex !important;
+    align-items: center !important;
+}
+
+.modal-content {
+    background-color: var(--bg-main) !important;
+    border: none !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    width: 100% !important;
+    height: 100% !important;
+    display: flex !important;
+    flex-direction: column !important;
+}
+
+.modal-header {
+    border-bottom: 1px solid var(--border) !important;
+    padding: 10px 14px !important;
+    background-color: var(--hover-bg) !important;
+    border-radius: 0 !important;
+}
+
+.modal-title {
+    font-size: 14px !important;
+    font-weight: 700 !important;
+    color: var(--text-main) !important;
+}
+
+.modal-body {
+    padding: 24px 16px !important;
+    font-size: 13px !important;
+    color: var(--text-main) !important;
+    line-height: 1.6 !important;
+    flex: 1 !important;
+    /* 占据剩余空间，将 footer 推到底部 */
+}
+
+.modal-body p {
+    margin-bottom: 12px !important;
+    letter-spacing: 0.2px;
+}
+
+.modal-footer {
+    border-top: 1px solid var(--border) !important;
+    padding: 0 !important;
+    display: flex !important;
+    gap: 0 !important;
+    margin-top: auto;
+}
+
+.modal-footer .btn {
+    flex: 1 !important;
+    border-radius: 0 !important;
+    font-size: 14px !important;
+    font-weight: 700 !important;
+    padding: 14px !important;
+    border: none !important;
+    transition: background 0.1s ease !important;
+    margin: 0 !important;
+}
+
+.modal-footer .btn-secondary {
+    background-color: var(--bg-main) !important;
+    color: var(--text-sub) !important;
+    border-right: 1px solid var(--border) !important;
+}
+
+.modal-footer .btn-primary {
+    background-color: var(--accent) !important;
+    color: #ffffff !important;
+}
+
+.modal-footer .btn:hover {
+    filter: brightness(1.1) !important;
+    transform: none !important;
+}
+
+.modal-footer .btn:active {
+    transform: scale(0.98) !important;
+}
+
+/* 隐藏头部关闭按钮，强制使用底部按钮，风格更统一 */
+.modal-header .btn-close,
+.modal-header .close {
+    display: none !important;
+}
+
+/* 视图容器 */
+.popup-container {
+    width: 100%;
+    height: 100%;
+}
+
+/* 设置界面样式 */
+.settings-view {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    background-color: var(--bg-main);
+}
+
+.settings-header {
+    display: flex;
+    align-items: center;
+    padding: 10px 14px;
+    background-color: var(--hover-bg);
+    border-bottom: 1px solid var(--border);
+}
+
+.back-btn {
+    background: transparent;
+    border: none;
+    color: var(--accent);
+    font-size: 18px;
+    cursor: pointer;
+    margin-right: 12px;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    transition: transform 0.2s;
+}
+
+.back-btn:hover {
+    transform: translateX(-2px);
+}
+
+.header-title {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--text-main);
+}
+
+.settings-list {
+    padding: 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    overflow-y: auto;
+    scrollbar-width: none;
+    /* Firefox */
+}
+
+.setting-group {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.setting-label {
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--text-sub);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 2px;
+}
+
+.setting-label-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2px;
+}
+
+.text-btn {
+    background: transparent;
+    border: none;
+    color: var(--accent);
+    font-size: 10px;
+    font-weight: 600;
+    cursor: pointer;
+    padding: 0;
+    text-transform: uppercase;
+}
+
+.text-btn:hover {
+    text-decoration: underline;
+}
+
+.setting-input,
+.setting-select {
+    width: 100%;
+    padding: 8px 10px;
+    background-color: var(--bg-main);
+    border: 1px solid var(--border);
+    border-radius: 0;
+    color: var(--text-main);
+    font-size: 13px;
+    outline: none;
+    transition: border-color 0.2s;
+}
+
+.setting-input:focus,
+.setting-select:focus {
+    border-color: var(--accent);
+}
+
+.setting-sub-group {
+    padding: 0 4px 8px 12px;
+    border-left: 2px solid var(--hover-bg);
+    margin-left: 4px;
+}
+
+.setting-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 4px 0;
+}
+
+.setting-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-main);
+    line-height: 1.4;
+}
+
+.setting-divider {
+    height: 1px;
+    background-color: var(--border);
+    margin: 4px 0;
+}
+
+.setting-checkbox {
+    width: 16px;
+    height: 16px;
+    cursor: pointer;
+    accent-color: var(--accent);
+}
+
+/* 遮罩背景 - 设为完全透明，因为内容已经全覆盖 */
+.modal-backdrop {
+    background-color: transparent !important;
+    opacity: 0 !important;
 }

@@ -1,26 +1,29 @@
 {
     "extensionName": {
-        "message": "BookmarkHub - sync bookmarks ",
+        "message": "BookmarkHub - Bookmark Sync",
         "description": ""
     },
     "extensionDescription": {
-        "message": "BookmarkHub,sync bookmarks across different browsers",
+        "message": "BookmarkHub, sync your bookmarks between different browsers",
         "description": ""
     },
     "uploadBookmarks": {
         "message": "Upload Bookmarks",
-        "description": ""
+        "description": "Upload all local bookmarks to the server"
     },
     "downloadBookmarks": {
-        "message": "DownLoad Bookmarks",
-        "description": ""
+        "message": "Download Bookmarks",
+        "description": "Clear local bookmarks and download all bookmarks from the server"
     },
     "syncBookmarks": {
         "message": "Sync Bookmarks",
-        "description": ""
+        "description": "Merge server bookmarks with local ones and upload the result"
+    },
+    "back": {
+        "message": "Back"
     },
     "removeAllBookmarks": {
-        "message": "Remove All Bookmarks",
+        "message": "Clear Local Bookmarks",
         "description": ""
     },
     "settings": {
@@ -32,15 +35,15 @@
         "description": ""
     },
     "localCount": {
-        "message": "Local Bookmark Count",
+        "message": "Local Count",
         "description": ""
     },
     "remoteCount": {
-        "message": "Remote Bookmark Count",
+        "message": "Remote Count",
         "description": ""
     },
     "githubToken": {
-        "message": "Github Token",
+        "message": "GitHub Token",
         "description": ""
     },
     "gistID": {
@@ -48,7 +51,7 @@
         "description": ""
     },
     "gistFileName": {
-        "message": "Gist File Name",
+        "message": "Gist Filename",
         "description": ""
     },
     "enableNotifications": {
@@ -72,19 +75,137 @@
         "description": ""
     },
     "uploadBookmarksDesc": {
-        "message": "Upload all the bookmarks of the local browser to the server",
+        "message": "Upload all local bookmarks to the server",
         "description": ""
     },
     "downloadBookmarksDesc": {
-        "message": "First clear the bookmarks in the local browser, and then download all the bookmarks on the server to the local browser",
+        "message": "Clear local bookmarks and download from server",
         "description": ""
     },
     "syncBookmarksDesc": {
-        "message": "Merge all the bookmarks on the server into the local browser, and then upload them to the server",
+        "message": "Merge server bookmarks with local and upload back",
         "description": ""
     },
     "removeAllBookmarksDesc": {
-        "message": "Remove All Bookmarks, Please backup first",
+        "message": "Clear all local bookmarks, please backup first",
         "description": ""
+    },
+    "confirm": {
+        "message": "Confirm",
+        "description": ""
+    },
+    "cancel": {
+        "message": "Cancel",
+        "description": ""
+    },
+    "confirmAction": {
+        "message": "Are you sure you want to perform this action?",
+        "description": ""
+    },
+    "processing": {
+        "message": "Processing...",
+        "description": ""
+    },
+    "exportBookmarks": {
+        "message": "Export Bookmarks",
+        "description": ""
+    },
+    "exportBookmarksDesc": {
+        "message": "Export local bookmarks to a JSON file",
+        "description": ""
+    },
+    "importBookmarks": {
+        "message": "Import Bookmarks",
+        "description": ""
+    },
+    "importBookmarksDesc": {
+        "message": "Import bookmarks from a JSON file, will overwrite current ones",
+        "description": ""
+    },
+    "importInvalidFormat": {
+        "message": "Invalid format, please choose a valid bookmark JSON file",
+        "description": ""
+    },
+    "settingsSync": {
+        "message": "Settings Sync",
+        "description": ""
+    },
+    "exportSettings": {
+        "message": "Export Settings",
+        "description": ""
+    },
+    "importSettings": {
+        "message": "Import Settings",
+        "description": ""
+    },
+    "settingsSyncDesc": {
+        "message": "Export settings file to sync configurations across browsers",
+        "description": ""
+    },
+    "exportSettingsSuccess": {
+        "message": "Settings exported successfully",
+        "description": ""
+    },
+    "exportSettingsFailed": {
+        "message": "Settings export failed",
+        "description": ""
+    },
+    "importSettingsSuccess": {
+        "message": "Settings imported successfully, page will refresh",
+        "description": ""
+    },
+    "importSettingsInvalidFormat": {
+        "message": "Invalid settings file format",
+        "description": ""
+    },
+    "autoSync": {
+        "message": "Auto Sync",
+        "description": ""
+    },
+    "autoSyncDesc": {
+        "message": "Automatically upload to cloud when bookmarks change",
+        "description": ""
+    },
+    "autoSyncInterval": {
+        "message": "Sync Interval",
+        "description": ""
+    },
+    "minutes": {
+        "message": "minutes",
+        "description": ""
+    },
+    "syncService": {
+        "message": "Sync Service",
+        "description": ""
+    },
+    "webdavUrl": {
+        "message": "WebDAV URL",
+        "description": ""
+    },
+    "webdavUsername": {
+        "message": "WebDAV Username",
+        "description": ""
+    },
+    "webdavPassword": {
+        "message": "WebDAV Password",
+        "description": ""
+    },
+    "webdavMaxBackups": {
+        "message": "Max Backups (WebDAV)"
+    },
+    "testConnection": {
+        "message": "Test"
+    },
+    "testGithubSuccess": {
+        "message": "GitHub connected successfully!"
+    },
+    "testWebdavSuccess": {
+        "message": "WebDAV connected successfully!"
+    },
+    "testFailed": {
+        "message": "Connection Failed"
+    },
+    "syncStatus": {
+        "message": "Sync Status"
     }
 }

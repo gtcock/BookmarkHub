@@ -9,7 +9,7 @@ class BookmarkService {
             if (filenames.indexOf(setting.gistFileName) !== -1) {
                 let gistFile = resp.files[setting.gistFileName]
                 if (gistFile.truncated) {
-                    const txt = http.get(gistFile.raw_url, {prefixUrl: ''}).text();
+                    const txt = http.get(gistFile.raw_url, { prefixUrl: '' }).text();
                     return txt;
                 } else {
                     return gistFile.content
@@ -24,6 +24,9 @@ class BookmarkService {
     async update(data: any) {
         let setting = await Setting.build();
         return http.patch(`gists/${setting.gistID}`, { json: data }).json();
+    }
+    async testConnection() {
+        return http.get('user').json();
     }
 }
 

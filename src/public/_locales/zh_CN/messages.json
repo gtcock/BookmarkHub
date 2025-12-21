@@ -8,16 +8,19 @@
         "description": ""
     },
     "uploadBookmarks": {
-        "message": "上传书签",
-        "description": "把本地浏览器的书签全部上传到服务器中"
+        "message": "上传到云端 (覆盖云端)",
+        "description": "以本地为准：将本地书签推送到云端，覆盖云端旧数据"
     },
     "downloadBookmarks": {
-        "message": "下载书签",
-        "description": "先清空本地浏览器中的书签，然后再把服务器上的书签全部下载到本地浏览器中"
+        "message": "覆盖本地 (以云端为准)",
+        "description": "以云端为准：清空本地书签，完全使用云端备份替换"
     },
     "syncBookmarks": {
-        "message": "同步书签",
-        "description": "把服务器上的书签全部合并到本地浏览器中，然后再上传到服务器"
+        "message": "合并同步 (智能合并)",
+        "description": "合并两端：将本地与云端书签智能融合，并更新到所有端"
+    },
+    "back": {
+        "message": "返回"
     },
     "removeAllBookmarks": {
         "message": "清空本地书签",
@@ -72,19 +75,137 @@
         "description": ""
     },
     "uploadBookmarksDesc": {
-        "message": "把本地浏览器的书签全部上传到服务器中",
+        "message": "这将以本地书签为准，覆盖云端所有备份。确定吗？",
         "description": ""
     },
     "downloadBookmarksDesc": {
-        "message": "先清空本地浏览器中的书签，然后再把服务器上的书签全部下载到本地浏览器中",
+        "message": "这将以云端备份为准，清空并替换掉你当前的本地书签。确定吗？",
         "description": ""
     },
     "syncBookmarksDesc": {
-        "message": "把服务器上的书签全部合并到本地浏览器中，然后再上传到服务器",
+        "message": "这将智能合并本地与云端书签（不删除任何一方，仅补全差异），并同步到所有端。确定吗？",
         "description": ""
     },
     "removeAllBookmarksDesc": {
         "message": "清空本地浏览器书签，请先做好备份",
         "description": ""
+    },
+    "confirm": {
+        "message": "确认",
+        "description": ""
+    },
+    "cancel": {
+        "message": "取消",
+        "description": ""
+    },
+    "confirmAction": {
+        "message": "确定要执行此操作吗？",
+        "description": ""
+    },
+    "processing": {
+        "message": "处理中...",
+        "description": ""
+    },
+    "exportBookmarks": {
+        "message": "导出书签",
+        "description": ""
+    },
+    "exportBookmarksDesc": {
+        "message": "将本地书签导出为 JSON 文件保存到本地",
+        "description": ""
+    },
+    "importBookmarks": {
+        "message": "导入书签",
+        "description": ""
+    },
+    "importBookmarksDesc": {
+        "message": "从 JSON 文件导入书签，将会覆盖现有书签",
+        "description": ""
+    },
+    "importInvalidFormat": {
+        "message": "文件格式无效，请选择有效的书签 JSON 文件",
+        "description": ""
+    },
+    "settingsSync": {
+        "message": "设置同步",
+        "description": ""
+    },
+    "exportSettings": {
+        "message": "导出设置",
+        "description": ""
+    },
+    "importSettings": {
+        "message": "导入设置",
+        "description": ""
+    },
+    "settingsSyncDesc": {
+        "message": "导出设置文件后，可在其他浏览器导入，实现跨浏览器配置同步",
+        "description": ""
+    },
+    "exportSettingsSuccess": {
+        "message": "设置导出成功",
+        "description": ""
+    },
+    "exportSettingsFailed": {
+        "message": "设置导出失败",
+        "description": ""
+    },
+    "importSettingsSuccess": {
+        "message": "设置导入成功，页面即将刷新",
+        "description": ""
+    },
+    "importSettingsInvalidFormat": {
+        "message": "设置文件格式无效，请选择有效的设置 JSON 文件",
+        "description": ""
+    },
+    "autoSync": {
+        "message": "自动同步",
+        "description": ""
+    },
+    "autoSyncDesc": {
+        "message": "当书签发生变更时，自动上传到云端",
+        "description": ""
+    },
+    "autoSyncInterval": {
+        "message": "同步间隔",
+        "description": ""
+    },
+    "minutes": {
+        "message": "分钟",
+        "description": ""
+    },
+    "syncService": {
+        "message": "同步服务",
+        "description": ""
+    },
+    "webdavUrl": {
+        "message": "WebDAV URL",
+        "description": ""
+    },
+    "webdavUsername": {
+        "message": "WebDAV 用户名",
+        "description": ""
+    },
+    "webdavPassword": {
+        "message": "WebDAV 密码",
+        "description": ""
+    },
+    "webdavMaxBackups": {
+        "message": "最大备份数量 (WebDAV)"
+    },
+    "testConnection": {
+        "message": "测试连接"
+    },
+    "testGithubSuccess": {
+        "message": "GitHub 连接成功！"
+    },
+    "testWebdavSuccess": {
+        "message": "WebDAV 连接成功！"
+    },
+    "testFailed": {
+        "message": "连接失败"
+    },
+    "syncStatus": {
+        "message": "同步状态"
     }
 }

@@ -1,4 +1,71 @@
-#root {
-    margin: 10px;
-    width: 500px;
+/* ========================================
+   BookmarkHub Options - Stable Modern Design
+   ======================================== */
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap');
+
+:root {
+    --bg-page: #f1f5f9;
+    --bg-card: #ffffff;
+    --text-title: #0f172a;
+    --text-body: #334155;
+    --border: #e2e8f0;
+    --accent: #4f46e5;
+}
+
+@media (prefers-color-scheme: dark) {
+    :root {
+        --bg-page: #0f172a;
+        --bg-card: #1e293b;
+        --text-title: #f8fafc;
+        --text-body: #cbd5e1;
+        --border: #334155;
+        --accent: #818cf8;
+    }
+}
+
+body {
+    background-color: var(--bg-page) !important;
+    font-family: 'Inter', sans-serif !important;
+    padding: 40px 0;
+}
+
+.container {
+    background-color: var(--bg-card) !important;
+    border: 1px solid var(--border) !important;
+    border-radius: 16px !important;
+    padding: 30px !important;
+    max-width: 600px !important;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1) !important;
+}
+
+.form-label {
+    color: var(--text-title) !important;
+    font-weight: 600 !important;
+}
+
+.form-control {
+    background-color: var(--bg-page) !important;
+    border: 1px solid var(--border) !important;
+    color: var(--text-title) !important;
+    border-radius: 8px !important;
+}
+
+.form-control:focus {
+    border-color: var(--accent) !important;
+    box-shadow: 0 0 0 2px rgba(79, 70, 229, 0.2) !important;
+}
+
+.btn-primary {
+    background-color: var(--accent) !important;
+    border: none !important;
+}
+
+.custom-switch .custom-control-input:checked~.custom-control-label::before {
+    background-color: var(--accent) !important;
+}
+
+hr {
+    border-top: 1px solid var(--border) !important;
+    margin: 30px 0 !important;
 }

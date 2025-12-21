@@ -8,6 +8,14 @@ export class SettingBase implements Options {
     gistFileName: string = 'BookmarkHub';
     enableNotify: boolean = true;
     githubURL: string = 'https://api.github.com';
+    autoSync: boolean = false;
+    autoSyncInterval: number = 30;
+    syncGithub: boolean = true;
+    syncWebdav: boolean = false;
+    webdavUrl: string = '';
+    webdavUsername: string = '';
+    webdavPassword: string = '';
+    webdavMaxBackups: number = 5;
 }
 export class Setting extends SettingBase {
     private constructor() { super() }
@@ -18,6 +26,14 @@ export class Setting extends SettingBase {
         setting.gistFileName = options.gistFileName;
         setting.githubToken = options.githubToken;
         setting.enableNotify = options.enableNotify;
+        setting.autoSync = options.autoSync;
+        setting.autoSyncInterval = options.autoSyncInterval;
+        setting.syncGithub = options.syncGithub;
+        setting.syncWebdav = options.syncWebdav;
+        setting.webdavUrl = options.webdavUrl;
+        setting.webdavUsername = options.webdavUsername;
+        setting.webdavPassword = options.webdavPassword;
+        setting.webdavMaxBackups = options.webdavMaxBackups || 5;
         return setting;
     }
 }

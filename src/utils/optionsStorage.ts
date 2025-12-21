@@ -8,6 +8,14 @@ export default new OptionsSync({
         gistFileName: 'BookmarkHub',
         enableNotify: true,
         githubURL: 'https://api.github.com',
+        autoSync: false,
+        autoSyncInterval: 30, // 分钟
+        syncGithub: true,
+        syncWebdav: false,
+        webdavUrl: '',
+        webdavUsername: '',
+        webdavPassword: '',
+        webdavMaxBackups: 5,
     },
 
     // List of functions that are called when the extension is updated

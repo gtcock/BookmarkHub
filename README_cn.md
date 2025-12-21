@@ -1,95 +1,118 @@
-
 <!-- PROJECT LOGO -->
 <br />
 <p align="center">
   <a href="https://github.com/dudor/BookmarkHub">
-    <img src="images/icon128.png" alt="BookmarkHub" >
+    <img src="images/icon128.png" alt="BookmarkHub" width="80" height="80">
   </a>
 
   <h1 align="center">BookmarkHub</h1>
+
   <p align="center">
-    BookmarkHub 是一款浏览器插件，可以在不同浏览器之间同步你的书签。
+    <b>简约、安全、强大的跨浏览器书签同步方案</b>
     <br />
-    <a href="https://github.com/dudor/BookmarkHub/issues">反馈问题</a>
+    <br />
+    <a href="https://github.com/dudor/BookmarkHub/issues">报告 Bug</a>
     ·
-    <a href="/README_cn.md">简体中文</a>
+    <a href="https://github.com/dudor/BookmarkHub/issues">提交建议</a>
     ·
     <a href="/README.md">English</a>
   </p>
 </p>
 
+---
+
+## 🚀 路线图 (TODO)
+
+- [x] **自动同步**：实时监听书签变更，智能合并上传
+- [x] **WebDAV 支持**：支持坚果云、Alist、Nextcloud 等私有云存储
+- [x] **多版本备份**：WebDAV 循环备份机制，数据安全无忧
+- [x] **导入/导出**：支持本地 JSON 文件的便捷导入与备份
+- [x] **容灾机制**：测试连接功能，确保服务时刻在线
+- [ ] **移动端支持**：为移动浏览器提供同步能力
+- [ ] **分享功能**：通过加密链接一键分享书签集
+- [x] **主题自适应**：智能跟随系统深色模式
+
+---
+
 <!-- TABLE OF CONTENTS -->
 <details open="open">
   <summary><h2 style="display: inline-block">目录</h2></summary>
-  <ol>
-    <li><a href="#关于">关于</a></li>
-    <li><a href="#功能">功能</a></li>
+  <ul>
+    <li><a href="#关于项目">关于项目</a></li>
+    <li><a href="#核心功能">核心功能</a></li>
     <li><a href="#下载安装">下载安装</a></li>
     <li><a href="#使用方法">使用方法</a></li>
-    <li><a href="#待实现的功能">待实现的功能</a></li>
-    <li><a href="#license">License</a></li>
-    <li><a href="#contact">Contact</a></li>
-  </ol>
+    <li><a href="#开源协议">开源协议</a></li>
+    <li><a href="#联系开发者">联系开发者</a></li>
+  </ul>
 </details>
 
-<!-- ABOUT THE PROJECT -->
-## 关于 
+---
 
-BookmarkHub 是一款浏览器插件，可以在不同浏览器之间同步你的书签。
+<a name="关于项目"></a>
+## 📖 关于项目
 
-适用于各大主流浏览器，如 Chrome、Firefox、Microsoft Edge 等。
+**BookmarkHub** 是一款专为极客和多设备使用者设计的浏览器插件。它打破了浏览器之间的生态壁垒，让你在不同品牌、不同设备（Chrome、Firefox、Microsoft Edge 等）之间无缝流转书签。
 
-它使用 GitHub 的 Gist 记录来存储浏览器的书签，可以放心安全的使用。
+它使用 **GitHub Gist** 或 **WebDAV** 作为私有存储媒介，不依赖第三方中间服务器，确保你的数据隐私与安全。
 
-![BookmarkHub](images/3.gif)
+![展示图](images/3.gif)
 
-![BookmarkHub](images/1.png)
+<div align="center">
+  <img src="images/1.png" width="45%" />
+  <img src="images/2.png" width="45%" />
+</div>
 
-![BookmarkHub](images/2.png)
+---
 
-## 功能
-* 不需要注册特殊账号，只需要用你的 GitHub 账号的Token和Gist
-* 一键上传下载书签
-* 一键清空本地所有书签
-* 支持跨电脑跨浏览器同步书签
-* 支持显示本地和远程书签的数量
+<a name="核心功能"></a>
+## ✨ 核心功能
 
-## 下载安装
-> 本插件需要把书签存储到 Gist 中，所以请确保有 GitHub 账号或可以通过网络注册 GitHub 账号。
-* [Chrome 浏览器](https://chrome.google.com/webstore/detail/bookmarkhub-sync-bookmark/fohimdklhhcpcnpmmichieidclgfdmol)
-* [Firefox 浏览器](https://addons.mozilla.org/zh-CN/firefox/addon/BookmarkHub/)
-* [Microsoft Edge 浏览器](https://microsoftedge.microsoft.com/addons/detail/BookmarkHub/fdnmfpogadcljhecfhdikdecbkggfmgk)
-* [其他基于 Chromium 内核的浏览器](https://chrome.google.com/webstore/detail/bookmarkhub-sync-bookmark/fohimdklhhcpcnpmmichieidclgfdmol)
+*   **零账号门槛**：无需注册，直接使用 GitHub Gist 或 WebDAV 凭据。
+*   **一键云同步**：极速上传/下载，支持增量合并同步。
+*   **本地管理**：提供快速清理本地冗余书签的功能。
+*   **多环境支持**：完美支持不同电脑、不同内核的浏览器互传。
+*   **状态透明**：实时显示本地与远程书签数量，差异一目了然。
+*   **数据安全**：WebDAV 支持多版本备份（默认 5 份历史存档）。
 
-<!-- USAGE EXAMPLES -->
-## 使用方法
+---
 
-1. [登陆](https://github.com/login) GitHub，如果没有账号请点此[注册](https://github.com/join)。
-2. [创建一个可以管理 gist 的 token](https://github.com/settings/tokens/new)。
-3. [创建一个私有的 gist](https://gist.github.com)。__注意：如果是公开的 gist，你的书签是可以被他人搜索到的。__
-4. 在浏览器的应用商店下载 BookmarkHub，点击插件的设置按钮，在弹出的设置窗口填入 token 和 gist ID，然后你就可以上传下载书签了。
+<a name="下载安装"></a>
+## 📦 下载安装
 
-<!-- ROADMAP -->
-## 待实现的功能
+> **注意**：使用 GitHub 存储需要有 GitHub 账号并配置 Gist 权限；WebDAV 则需要你有相应的云服务器地址。
 
-- [ ] 自动同步书签
-- [ ] 支持 webdav 协议
-- [ ] 移动端
-- [ ] 导入导出
-- [ ] 分享书签
+*   [Chrome 网上应用店](https://chrome.google.com/webstore/detail/bookmarkhub-sync-bookmark/fohimdklhhcpcnpmmichieidclgfdmol)
+*   [Firefox 附加组件](https://addons.mozilla.org/zh-CN/firefox/addon/BookmarkHub/)
+*   [Microsoft Edge 外接程序](https://microsoftedge.microsoft.com/addons/detail/BookmarkHub/fdnmfpogadcljhecfhdikdecbkggfmgk)
+*   **Chromium 内核浏览器**：可通过 Chrome 应用商店手动安装。
 
+---
 
-<!-- LICENSE -->
-## License
+<a name="使用方法"></a>
+## 🛠 使用方法
 
-See `LICENSE` for more information.
+1.  **登录 GitHub**：[GitHub.com](https://github.com/login)。
+2.  **申请 Token**：[创建管理 Gist 的 Token](https://github.com/settings/tokens/new)（需选中 `gist` 权限）。
+3.  **创建 Gist**：[创建一个名为 BookmarkHub 的私有 Gist](https://gist.github.com)。*强烈建议设为私有！*
+4.  **配置插件**：
+    *   在插件设置页填入填入 **GitHub Token** 和 **Gist ID**。
+    *   或者开启 **WebDAV** 配置。
+5.  **开始同步**：点击“合并同步”即可将本地与云端数据完美融合。
 
-<!-- CONTACT -->
-## Contact
+---
 
-dudor
+<a name="开源协议"></a>
+## 📄 开源协议
 
-Project Link: [https://github.com/dudor/BookmarkHub](https://github.com/dudor/BookmarkHub)
+基于 **MIT License**。详情请参阅 `LICENSE` 文件。
 
+---
 
+<a name="联系开发者"></a>
+## 🤝 联系开发者
 
+**dudor**
+
+*   项目地址: [https://github.com/dudor/BookmarkHub](https://github.com/dudor/BookmarkHub)
+*   如果您觉得好用，欢迎给一个 **Star** ⭐️，这是对开发者最大的鼓励！
