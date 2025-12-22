@@ -10,12 +10,15 @@ export default new OptionsSync({
         githubURL: 'https://api.github.com',
         autoSync: false,
         autoSyncInterval: 30, // 分钟
+        autoSyncNotify: true, // 自动同步通知
         syncGithub: true,
         syncWebdav: false,
         webdavUrl: '',
         webdavUsername: '',
         webdavPassword: '',
         webdavMaxBackups: 5,
+        fetchFavicon: true, // 获取网页图标
+        faviconConcurrency: 3, // 图标加载并发数
     },
 
     // List of functions that are called when the extension is updated

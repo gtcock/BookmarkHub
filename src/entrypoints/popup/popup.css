@@ -56,7 +56,7 @@ body {
     width: 100% !important;
     margin: 0 !important;
     padding: 0 !important;
-    border: 2px solid var(--border) !important;
+    border: 3px solid var(--border) !important;
     border-radius: 0;
     overflow: hidden;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
@@ -438,6 +438,35 @@ body {
     padding: 4px 0;
 }
 
+.setting-item.collapsible {
+    cursor: pointer;
+    padding: 8px 0;
+    margin: 0 -4px;
+    padding-left: 4px;
+    padding-right: 4px;
+    border-radius: 4px;
+    transition: background-color 0.15s;
+}
+
+.setting-item.collapsible:hover {
+    background-color: var(--hover-bg);
+}
+
+.setting-item.collapsible .setting-info {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.collapse-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    color: var(--text-sub);
+    transition: transform 0.2s;
+}
+
 .setting-title {
     font-size: 13px;
     font-weight: 600;
@@ -456,6 +485,81 @@ body {
     height: 16px;
     cursor: pointer;
     accent-color: var(--accent);
+}
+
+/* 密码输入框容器 */
+.password-input-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+    width: 100%;
+}
+
+.password-input-wrapper .setting-input {
+    padding-right: 36px;
+}
+
+.password-toggle-btn {
+    position: absolute;
+    right: 8px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: transparent;
+    border: none;
+    color: var(--text-sub);
+    cursor: pointer;
+    padding: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    transition: color 0.2s;
+}
+
+.password-toggle-btn:hover {
+    color: var(--accent);
+}
+
+/* 配置导入导出区域 */
+.config-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.config-btn {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 10px 8px;
+    background-color: var(--hover-bg);
+    border: 1px solid var(--border);
+    border-radius: 0;
+    color: var(--text-main);
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.config-btn:hover {
+    background-color: var(--accent);
+    color: #ffffff;
+    border-color: var(--accent);
+}
+
+.config-btn svg {
+    font-size: 14px;
+}
+
+/* 配置导入文本域 */
+.config-textarea {
+    resize: none;
+    font-family: 'Consolas', 'Monaco', monospace;
+    font-size: 11px;
+    line-height: 1.4;
+    min-height: 100px;
 }
 
 /* 遮罩背景 - 设为完全透明，因为内容已经全覆盖 */

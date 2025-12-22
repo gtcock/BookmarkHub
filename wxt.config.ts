@@ -9,7 +9,7 @@ export default defineConfig({
     name: "__MSG_extensionName__",
     description: "__MSG_extensionDescription__",
     default_locale: 'en',
-    permissions: ['storage', 'bookmarks', 'notifications', 'alarms'],
+    permissions: ['storage', 'bookmarks', 'notifications', 'alarms', 'tabs'],
     host_permissions: ["https://*.github.com/", "https://*.githubusercontent.com/", "*://*/*"],
   }
 });

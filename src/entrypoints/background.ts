@@ -60,7 +60,7 @@ export default defineBackground(() => {
       if (setting.autoSync && autoSyncPending) {
         console.log('[BookmarkHub] Auto sync triggered');
         curOperType = OperType.SYNC;
-        await uploadBookmarks();
+        await uploadBookmarks(setting.autoSyncNotify);
         curOperType = OperType.NONE;
         browser.action.setBadgeText({ text: "" });
         autoSyncPending = false;
@@ -195,6 +195,11 @@ export default defineBackground(() => {
       await clearBookmarkTree();
       await createBookmarkTree(finalMergedBookmarks);
 
+      // 4.5 预热图标
+      if (setting.fetchFavicon) {
+        prefetchFavicons(finalMergedBookmarks);
+      }
+
       // 5. 将最终结果推送到所有服务
       const finalSyncData = new SyncDataInfo();
       finalSyncData.version = browser.runtime.getManifest().version;
@@ -314,7 +319,7 @@ export default defineBackground(() => {
     }
   })
 
-  async function uploadBookmarks() {
+  async function uploadBookmarks(showNotify?: boolean) {
     const results: { service: string, success: boolean, error?: string }[] = [];
     try {
       let setting = await Setting.build()
@@ -359,7 +364,9 @@ export default defineBackground(() => {
       const count = getBookmarkCount(syncdata.bookmarks);
       await browser.storage.local.set({ remoteCount: count });
 
-      if (setting.enableNotify) {
+      // showNotify 参数用于自动同步时控制是否显示通知
+      const shouldNotify = showNotify !== undefined ? showNotify : setting.enableNotify;
+      if (shouldNotify) {
         notifyMultiChannel(browser.i18n.getMessage('uploadBookmarks'), results);
       }
 
@@ -433,6 +440,12 @@ export default defineBackground(() => {
 
         await clearBookmarkTree();
         await createBookmarkTree(mergedCloudBookmarks);
+
+        // 预热图标
+        if (setting.fetchFavicon) {
+          prefetchFavicons(mergedCloudBookmarks);
+        }
+
         const count = getBookmarkCount(mergedCloudBookmarks);
         await browser.storage.local.set({ remoteCount: count });
 
@@ -699,6 +712,142 @@ export default defineBackground(() => {
       });
       throw error;
     }
+  }
+
+  // 预热 favicon，通过在后台打开标签页来触发浏览器缓存
+  async function prefetchFavicons(bookmarks: BookmarkInfo[]) {
+    const urls = extractUrls(bookmarks);
+    const uniqueOrigins = new Set<string>();
+
+    // 提取唯一来源（协议+域名）
+    urls.forEach(url => {
+      try {
+        const urlObj = new URL(url);
+        if (urlObj.protocol === 'http:' || urlObj.protocol === 'https:') {
+          uniqueOrigins.add(urlObj.origin);
+        }
+      } catch (e) {
+        // 无效 URL，跳过
+      }
+    });
+
+    const origins = Array.from(uniqueOrigins);
+
+    // 限制最大数量，避免打开太多标签
+    const maxSites = 50;
+    const sitesToLoad = origins.slice(0, maxSites);
+
+    if (sitesToLoad.length === 0) return;
+
+    console.log(`[BookmarkHub] Loading favicons for ${sitesToLoad.length} sites (max ${maxSites})...`);
+
+    // 等待标签页加载完成的函数
+    const waitForTabLoad = (tabId: number, timeout: number = 10000): Promise<void> => {
+      return new Promise((resolve) => {
+        let resolved = false;
+
+        const listener = (updatedTabId: number, changeInfo: any) => {
+          if (updatedTabId === tabId && changeInfo.status === 'complete') {
+            if (!resolved) {
+              resolved = true;
+              browser.tabs.onUpdated.removeListener(listener);
+              // 页面加载完成后再等待 1 秒确保 favicon 被加载
+              setTimeout(resolve, 1000);
+            }
+          }
+        };
+
+        browser.tabs.onUpdated.addListener(listener);
+
+        // 超时保护
+        setTimeout(() => {
+          if (!resolved) {
+            resolved = true;
+            browser.tabs.onUpdated.removeListener(listener);
+            resolve();
+          }
+        }, timeout);
+      });
+    };
+
+    // 使用并发队列处理
+    let loadedCount = 0;
+    const setting = await Setting.build();
+    const concurrency = setting.faviconConcurrency || 3;
+
+    // 处理单个站点的函数
+    const loadSite = async (origin: string): Promise<void> => {
+      try {
+        const tab = await browser.tabs.create({
+          url: origin,
+          active: false
+        });
+
+        if (tab.id) {
+          await waitForTabLoad(tab.id, 10000);
+          try {
+            await browser.tabs.remove(tab.id);
+          } catch (e) { }
+        }
+
+        loadedCount++;
+        console.log(`[BookmarkHub] Favicon ${loadedCount}/${sitesToLoad.length}: ${origin}`);
+      } catch (e) {
+        console.log(`[BookmarkHub] Failed to load: ${origin}`);
+      }
+    };
+
+    // 并发控制队列
+    const queue = [...sitesToLoad];
+    const workers: Promise<void>[] = [];
+
+    const worker = async () => {
+      while (queue.length > 0) {
+        const origin = queue.shift();
+        if (origin) {
+          await loadSite(origin);
+        }
+      }
+    };
+
+    // 启动多个 worker
+    for (let i = 0; i < Math.min(concurrency, sitesToLoad.length); i++) {
+      workers.push(worker());
+    }
+
+    // 等待所有 worker 完成
+    await Promise.all(workers);
+
+    console.log(`[BookmarkHub] Favicon prefetch completed: ${loadedCount} sites loaded`);
+
+    // 显示通知
+    if (setting.enableNotify) {
+      await browser.notifications.create({
+        type: "basic",
+        iconUrl: iconLogo,
+        title: "图标加载完成",
+        message: `已为 ${loadedCount} 个网站加载图标`
+      });
+    }
+  }
+
+  // 从书签树中提取所有 URL
+  function extractUrls(bookmarks: BookmarkInfo[]): string[] {
+    const urls: string[] = [];
+
+    function traverse(nodes: BookmarkInfo[]) {
+      nodes.forEach(node => {
+        if (node.url) {
+          urls.push(node.url);
+        }
+        if (node.children) {
+          traverse(node.children);
+        }
+      });
+    }
+
+    traverse(bookmarks);
+    return urls;
   }
 
 });

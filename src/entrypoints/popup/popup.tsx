@@ -6,7 +6,8 @@ import {
     AiOutlineCloudUpload, AiOutlineCloudDownload,
     AiOutlineCloudSync, AiOutlineSetting, AiOutlineClear,
     AiOutlineInfoCircle, AiOutlineGithub, AiOutlineExport, AiOutlineImport,
-    AiOutlineArrowLeft
+    AiOutlineArrowLeft, AiOutlineEye, AiOutlineEyeInvisible, AiOutlineCopy,
+    AiOutlineDown, AiOutlineRight
 } from 'react-icons/ai'
 import 'bootstrap/dist/css/bootstrap.min.css';
 import './popup.css'
@@ -26,6 +27,12 @@ const Popup: React.FC = () => {
     const [isLoading, setIsLoading] = useState(false)
     const [view, setView] = useState<'menu' | 'settings'>('menu')
     const [settings, setSettings] = useState<any>(null)
+    const [showGithubToken, setShowGithubToken] = useState(false)
+    const [showWebdavPassword, setShowWebdavPassword] = useState(false)
+    const [showImportModal, setShowImportModal] = useState(false)
+    const [importConfigText, setImportConfigText] = useState('')
+    const [expandGithub, setExpandGithub] = useState(false)
+    const [expandWebdav, setExpandWebdav] = useState(false)
     const fileInputRef = useRef<HTMLInputElement>(null)
 
     // 需要确认的操作
@@ -106,6 +113,64 @@ const Popup: React.FC = () => {
             alert(`${browser.i18n.getMessage('testFailed')}: ${e.message}`);
         } finally {
             setIsLoading(false);
+        }
+    };
+
+    // 复制全部配置
+    const handleCopyConfig = async () => {
+        if (!settings) return;
+        const configData = {
+            syncGithub: settings.syncGithub,
+            githubToken: settings.githubToken,
+            gistID: settings.gistID,
+            gistFileName: settings.gistFileName,
+            syncWebdav: settings.syncWebdav,
+            webdavUrl: settings.webdavUrl,
+            webdavUsername: settings.webdavUsername,
+            webdavPassword: settings.webdavPassword,
+            webdavMaxBackups: settings.webdavMaxBackups,
+            autoSync: settings.autoSync,
+            autoSyncInterval: settings.autoSyncInterval,
+            autoSyncNotify: settings.autoSyncNotify,
+            fetchFavicon: settings.fetchFavicon,
+            faviconConcurrency: settings.faviconConcurrency
+        };
+        try {
+            await navigator.clipboard.writeText(JSON.stringify(configData, null, 2));
+            await browser.notifications.create({
+                type: "basic",
+                iconUrl: iconLogo,
+                title: "配置导出",
+                message: "配置已复制到剪贴板"
+            });
+        } catch (e) {
+            alert('复制失败，请手动复制');
+        }
+    };
+
+    // 导入配置
+    const handleImportConfig = async () => {
+        try {
+            const configData = JSON.parse(importConfigText);
+            // 逐个更新设置
+            for (const [key, value] of Object.entries(configData)) {
+                if (value !== undefined) {
+                    await optionsStorage.set({ [key]: value });
+                }
+            }
+            // 重新加载设置
+            const newSettings = await optionsStorage.getAll();
+            setSettings(newSettings);
+            setShowImportModal(false);
+            setImportConfigText('');
+            await browser.notifications.create({
+                type: "basic",
+                iconUrl: iconLogo,
+                title: "配置导入",
+                message: "配置导入成功"
+            });
+        } catch (e) {
+            alert('配置格式错误，请检查JSON格式');
         }
     };
 
@@ -323,8 +388,23 @@ const Popup: React.FC = () => {
                             <span className="header-title">{browser.i18n.getMessage('settings')}</span>
                         </div>
                         <div className="settings-list">
-                            <div className="setting-item">
+                            {/* 配置导入导出 */}
+                            <div className="config-actions">
+                                <button className="config-btn" onClick={handleCopyConfig} title="复制配置到剪贴板">
+                                    <AiOutlineCopy />
+                                    <span>复制配置</span>
+                                </button>
+                                <button className="config-btn" onClick={() => setShowImportModal(true)} title="从剪贴板导入配置">
+                                    <AiOutlineImport />
+                                    <span>导入配置</span>
+                                </button>
+                            </div>
+
+                            <div className="setting-divider" />
+
+                            <div className="setting-item collapsible" onClick={() => setExpandGithub(!expandGithub)}>
                                 <div className="setting-info">
+                                    <span className="collapse-icon">{expandGithub ? <AiOutlineDown /> : <AiOutlineRight />}</span>
                                     <span className="setting-title">GitHub Gist</span>
                                 </div>
                                 <div className="setting-control">
@@ -332,24 +412,35 @@ const Popup: React.FC = () => {
                                         type="checkbox"
                                         className="setting-checkbox"
                                         checked={settings?.syncGithub || false}
-                                        onChange={(e) => handleSettingChange('syncGithub', e.target.checked)}
+                                        onChange={(e) => { e.stopPropagation(); handleSettingChange('syncGithub', e.target.checked); }}
+                                        onClick={(e) => e.stopPropagation()}
                                     />
                                 </div>
                             </div>
-                            {settings?.syncGithub && (
+                            {expandGithub && settings?.syncGithub && (
                                 <div>
                                     <div className="setting-group">
                                         <div className="setting-label-row">
                                             <label className="setting-label">GitHub Token</label>
                                             <button className="text-btn" onClick={() => handleTest('github')}>{browser.i18n.getMessage('testConnection')}</button>
                                         </div>
-                                        <input
-                                            type="password"
-                                            className="setting-input"
-                                            value={settings?.githubToken || ''}
-                                            onChange={(e) => handleSettingChange('githubToken', e.target.value)}
-                                            placeholder="ghp_xxxxxxxxxxxx"
-                                        />
+                                        <div className="password-input-wrapper">
+                                            <input
+                                                type={showGithubToken ? "text" : "password"}
+                                                className="setting-input"
+                                                value={settings?.githubToken || ''}
+                                                onChange={(e) => handleSettingChange('githubToken', e.target.value)}
+                                                placeholder="ghp_xxxxxxxxxxxx"
+                                            />
+                                            <button
+                                                type="button"
+                                                className="password-toggle-btn"
+                                                onClick={() => setShowGithubToken(!showGithubToken)}
+                                                title={showGithubToken ? '隐藏' : '显示'}
+                                            >
+                                                {showGithubToken ? <AiOutlineEyeInvisible /> : <AiOutlineEye />}
+                                            </button>
+                                        </div>
                                     </div>
                                     <div className="setting-group">
                                         <label className="setting-label">Gist ID</label>
@@ -361,13 +452,23 @@ const Popup: React.FC = () => {
                                             placeholder="Gist ID"
                                         />
                                     </div>
+                                    <div className="setting-group">
+                                        <label className="setting-label">{browser.i18n.getMessage('gistFileName')}</label>
+                                        <input
+                                            type="text"
+                                            className="setting-input"
+                                            value={settings?.gistFileName || ''}
+                                            onChange={(e) => handleSettingChange('gistFileName', e.target.value)}
+                                        />
+                                    </div>
                                 </div>
                             )}
 
                             <div className="setting-divider" />
 
-                            <div className="setting-item">
+                            <div className="setting-item collapsible" onClick={() => setExpandWebdav(!expandWebdav)}>
                                 <div className="setting-info">
+                                    <span className="collapse-icon">{expandWebdav ? <AiOutlineDown /> : <AiOutlineRight />}</span>
                                     <span className="setting-title">WebDAV</span>
                                 </div>
                                 <div className="setting-control">
@@ -375,11 +476,12 @@ const Popup: React.FC = () => {
                                         type="checkbox"
                                         className="setting-checkbox"
                                         checked={settings?.syncWebdav || false}
-                                        onChange={(e) => handleSettingChange('syncWebdav', e.target.checked)}
+                                        onChange={(e) => { e.stopPropagation(); handleSettingChange('syncWebdav', e.target.checked); }}
+                                        onClick={(e) => e.stopPropagation()}
                                     />
                                 </div>
                             </div>
-                            {settings?.syncWebdav && (
+                            {expandWebdav && settings?.syncWebdav && (
                                 <div>
                                     <div className="setting-group">
                                         <div className="setting-label-row">
@@ -406,13 +508,23 @@ const Popup: React.FC = () => {
                                     </div>
                                     <div className="setting-group">
                                         <label className="setting-label">{browser.i18n.getMessage('webdavPassword')}</label>
-                                        <input
-                                            type="password"
-                                            className="setting-input"
-                                            value={settings?.webdavPassword || ''}
-                                            onChange={(e) => handleSettingChange('webdavPassword', e.target.value)}
-                                            placeholder="Password"
-                                        />
+                                        <div className="password-input-wrapper">
+                                            <input
+                                                type={showWebdavPassword ? "text" : "password"}
+                                                className="setting-input"
+                                                value={settings?.webdavPassword || ''}
+                                                onChange={(e) => handleSettingChange('webdavPassword', e.target.value)}
+                                                placeholder="Password"
+                                            />
+                                            <button
+                                                type="button"
+                                                className="password-toggle-btn"
+                                                onClick={() => setShowWebdavPassword(!showWebdavPassword)}
+                                                title={showWebdavPassword ? '隐藏' : '显示'}
+                                            >
+                                                {showWebdavPassword ? <AiOutlineEyeInvisible /> : <AiOutlineEye />}
+                                            </button>
+                                        </div>
                                     </div>
                                     <div className="setting-group">
                                         <label className="setting-label">{browser.i18n.getMessage('webdavMaxBackups')}</label>
@@ -429,17 +541,6 @@ const Popup: React.FC = () => {
                             )}
 
                             <div className="setting-divider" />
-
-                            <div className="setting-group">
-                                <label className="setting-label">{browser.i18n.getMessage('gistFileName')}</label>
-                                <input
-                                    type="text"
-                                    className="setting-input"
-                                    value={settings?.gistFileName || ''}
-                                    onChange={(e) => handleSettingChange('gistFileName', e.target.value)}
-                                />
-                            </div>
-                            <div className="setting-divider" />
                             <div className="setting-item">
                                 <div className="setting-info">
                                     <span className="setting-title">{browser.i18n.getMessage('autoSync')}</span>
@@ -454,18 +555,64 @@ const Popup: React.FC = () => {
                                 </div>
                             </div>
                             {settings?.autoSync && (
+                                <div>
+                                    <div className="setting-group">
+                                        <label className="setting-label">{browser.i18n.getMessage('autoSyncInterval')}</label>
+                                        <select
+                                            className="setting-select"
+                                            value={settings?.autoSyncInterval || 30}
+                                            onChange={(e) => handleSettingChange('autoSyncInterval', Number(e.target.value))}
+                                        >
+                                            <option value="5">5 {browser.i18n.getMessage('minutes')}</option>
+                                            <option value="10">10 {browser.i18n.getMessage('minutes')}</option>
+                                            <option value="15">15 {browser.i18n.getMessage('minutes')}</option>
+                                            <option value="30">30 {browser.i18n.getMessage('minutes')}</option>
+                                            <option value="60">60 {browser.i18n.getMessage('minutes')}</option>
+                                        </select>
+                                    </div>
+                                    <div className="setting-item" style={{ marginTop: '8px' }}>
+                                        <div className="setting-info">
+                                            <span className="setting-title" style={{ fontSize: '12px' }}>同步完成通知</span>
+                                        </div>
+                                        <div className="setting-control">
+                                            <input
+                                                type="checkbox"
+                                                className="setting-checkbox"
+                                                checked={settings?.autoSyncNotify !== false}
+                                                onChange={(e) => handleSettingChange('autoSyncNotify', e.target.checked)}
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+
+                            <div className="setting-divider" />
+
+                            <div className="setting-item">
+                                <div className="setting-info">
+                                    <span className="setting-title">获取网页图标</span>
+                                </div>
+                                <div className="setting-control">
+                                    <input
+                                        type="checkbox"
+                                        className="setting-checkbox"
+                                        checked={settings?.fetchFavicon !== false}
+                                        onChange={(e) => handleSettingChange('fetchFavicon', e.target.checked)}
+                                    />
+                                </div>
+                            </div>
+                            {settings?.fetchFavicon !== false && (
                                 <div className="setting-group">
-                                    <label className="setting-label">{browser.i18n.getMessage('autoSyncInterval')}</label>
+                                    <label className="setting-label">并发数</label>
                                     <select
                                         className="setting-select"
-                                        value={settings?.autoSyncInterval || 30}
-                                        onChange={(e) => handleSettingChange('autoSyncInterval', Number(e.target.value))}
+                                        value={settings?.faviconConcurrency || 3}
+                                        onChange={(e) => handleSettingChange('faviconConcurrency', Number(e.target.value))}
                                     >
-                                        <option value="5">5 {browser.i18n.getMessage('minutes')}</option>
-                                        <option value="10">10 {browser.i18n.getMessage('minutes')}</option>
-                                        <option value="15">15 {browser.i18n.getMessage('minutes')}</option>
-                                        <option value="30">30 {browser.i18n.getMessage('minutes')}</option>
-                                        <option value="60">60 {browser.i18n.getMessage('minutes')}</option>
+                                        <option value="1">1（慢速稳定）</option>
+                                        <option value="3">3（推荐）</option>
+                                        <option value="5">5（较快）</option>
+                                        <option value="10">10（最快）</option>
                                     </select>
                                 </div>
                             )}
@@ -488,6 +635,31 @@ const Popup: React.FC = () => {
                     </Button>
                     <Button variant="primary" onClick={handleConfirm} disabled={isLoading}>
                         {isLoading ? browser.i18n.getMessage('processing') : browser.i18n.getMessage('confirm')}
+                    </Button>
+                </Modal.Footer>
+            </Modal>
+
+            {/* 导入配置模态框 */}
+            <Modal show={showImportModal} onHide={() => { setShowImportModal(false); setImportConfigText(''); }} centered size="sm">
+                <Modal.Header>
+                    <Modal.Title>导入配置</Modal.Title>
+                </Modal.Header>
+                <Modal.Body>
+                    <p style={{ fontSize: '12px', marginBottom: '8px', color: 'var(--text-sub)' }}>粘贴从其他浏览器复制的配置JSON：</p>
+                    <textarea
+                        className="setting-input config-textarea"
+                        value={importConfigText}
+                        onChange={(e) => setImportConfigText(e.target.value)}
+                        placeholder='{"syncGithub": true, ...}'
+                        rows={6}
+                    />
+                </Modal.Body>
+                <Modal.Footer>
+                    <Button variant="secondary" onClick={() => { setShowImportModal(false); setImportConfigText(''); }}>
+                        {browser.i18n.getMessage('cancel')}
+                    </Button>
+                    <Button variant="primary" onClick={handleImportConfig} disabled={!importConfigText.trim()}>
+                        导入
                     </Button>
                 </Modal.Footer>
             </Modal>

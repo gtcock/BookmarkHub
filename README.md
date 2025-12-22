@@ -57,6 +57,11 @@ It uses GitHub's Gist records to store browser bookmarks for safe and secure use
 
 ## Installation
 > This plug-in requires bookmarks to be stored in Gist, so make sure you have a GitHub account or register your GitHub account over the network.
+
+### Quick Download
+**[⬇️ Download Latest Version (Chrome/Edge)](https://github.com/iwvw/BookmarkHub/releases/latest/download/bookmarkhub-chrome.zip)**
+
+### Browser Stores
 * [Chrome](https://chrome.google.com/webstore/detail/bookmarkhub-sync-bookmark/fohimdklhhcpcnpmmichieidclgfdmol)
 * [Firefox](https://addons.mozilla.org/en/firefox/addon/BookmarkHub/)
 * [Microsoft Edge](https://microsoftedge.microsoft.com/addons/detail/BookmarkHub/fdnmfpogadcljhecfhdikdecbkggfmgk)
@@ -73,11 +78,12 @@ It uses GitHub's Gist records to store browser bookmarks for safe and secure use
 <!-- ROADMAP -->
 ## Roadmap
 
-- [ ] Automatically sync bookmarks
-- [ ] Support webdav protocol
+- [x] Automatically sync bookmarks
+- [x] Support webdav protocol
+- [x] Import and Export
 - [ ] Mobile app
-- [ ] Import and Export
 - [ ] Share bookmarks
+
 
 <!-- LICENSE -->
 ## License
