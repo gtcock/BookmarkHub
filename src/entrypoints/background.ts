@@ -4,12 +4,15 @@ import { Setting } from '../utils/setting'
 import iconLogo from '../assets/icon.png'
 import { OperType, BookmarkInfo, SyncDataInfo, RootBookmarksType, BrowserType } from '../utils/models'
 import { Bookmarks } from 'wxt/browser'
-export default defineBackground(() => {
 
+type RootTypeValue = RootBookmarksType | 'bookmark_bar' | 'other' | 'mobile' | 'menu' | undefined;
+type BookmarkNodeWithRoot = BookmarkInfo & { rootType?: RootTypeValue };
+
+export default defineBackground(() => {
   const AUTO_SYNC_ALARM_NAME = 'bookmarkhub-auto-sync';
   let autoSyncPending = false; // 标记是否有待同步的变更
 
-  browser.runtime.onInstalled.addListener(c => {
+  browser.runtime.onInstalled.addListener(() => {
     // 初始化自动同步
     initAutoSync();
   });
@@ -70,6 +73,7 @@ export default defineBackground(() => {
 
   let curOperType = OperType.NONE;
   let curBrowserType = BrowserType.CHROME;
+
   browser.runtime.onMessage.addListener((msg, sender, sendResponse) => {
     if (msg.name === 'upload') {
       curOperType = OperType.SYNC
@@ -149,7 +153,7 @@ export default defineBackground(() => {
   async function syncBookmarks() {
     const results: { service: string, success: boolean, error?: string }[] = [];
     try {
-      let setting = await Setting.build();
+      const setting = await Setting.build();
       const cloudTrees: BookmarkInfo[][] = [];
 
       // 1. 从所有开启的服务拉取数据
@@ -189,7 +193,10 @@ export default defineBackground(() => {
       });
 
       // 3. 将云端合并结果与本地合并
-      const finalMergedBookmarks = mergeBookmarkTrees(mergedCloudBookmarks, localFormatted);
+      let finalMergedBookmarks = mergeBookmarkTrees(mergedCloudBookmarks, localFormatted);
+
+      // 3.1 纠偏：避免“其他书签里套书签栏/其他书签”
+      finalMergedBookmarks = normalizeImportedRoots(finalMergedBookmarks);
 
       // 4. 更新本地
       await clearBookmarkTree();
@@ -232,7 +239,7 @@ export default defineBackground(() => {
 
       await Promise.all(uploadTasks);
 
-      const count = getBookmarkCount(finalMergedBookmarks);
+      const count = getBookmarkCount(finalSyncData.bookmarks);
       await browser.storage.local.set({ remoteCount: count });
 
       if (setting.enableNotify) {
@@ -284,47 +291,47 @@ export default defineBackground(() => {
 
     return result;
   }
+
   browser.bookmarks.onCreated.addListener((id, info) => {
     if (curOperType === OperType.NONE) {
-      // console.log("onCreated", id, info)
       browser.action.setBadgeText({ text: "!" });
       browser.action.setBadgeBackgroundColor({ color: "#F00" });
       refreshLocalCount();
-      autoSyncPending = true; // 标记有待同步的变更
+      autoSyncPending = true;
     }
   });
+
   browser.bookmarks.onChanged.addListener((id, info) => {
     if (curOperType === OperType.NONE) {
-      // console.log("onChanged", id, info)
       browser.action.setBadgeText({ text: "!" });
       browser.action.setBadgeBackgroundColor({ color: "#F00" });
-      autoSyncPending = true; // 标记有待同步的变更
+      autoSyncPending = true;
     }
   })
+
   browser.bookmarks.onMoved.addListener((id, info) => {
     if (curOperType === OperType.NONE) {
-      // console.log("onMoved", id, info)
       browser.action.setBadgeText({ text: "!" });
       browser.action.setBadgeBackgroundColor({ color: "#F00" });
-      autoSyncPending = true; // 标记有待同步的变更
+      autoSyncPending = true;
     }
   })
+
   browser.bookmarks.onRemoved.addListener((id, info) => {
     if (curOperType === OperType.NONE) {
-      // console.log("onRemoved", id, info)
       browser.action.setBadgeText({ text: "!" });
       browser.action.setBadgeBackgroundColor({ color: "#F00" });
       refreshLocalCount();
-      autoSyncPending = true; // 标记有待同步的变更
+      autoSyncPending = true;
     }
   })
 
   async function uploadBookmarks(showNotify?: boolean) {
     const results: { service: string, success: boolean, error?: string }[] = [];
     try {
-      let setting = await Setting.build()
-      let bookmarks = await getBookmarks();
-      let syncdata = new SyncDataInfo();
+      const setting = await Setting.build()
+      const bookmarks = await getBookmarks();
+      const syncdata = new SyncDataInfo();
       syncdata.version = browser.runtime.getManifest().version;
       syncdata.createDate = Date.now();
       syncdata.bookmarks = formatBookmarks(bookmarks);
@@ -364,14 +371,12 @@ export default defineBackground(() => {
       const count = getBookmarkCount(syncdata.bookmarks);
       await browser.storage.local.set({ remoteCount: count });
 
-      // showNotify 参数用于自动同步时控制是否显示通知
       const shouldNotify = showNotify !== undefined ? showNotify : setting.enableNotify;
       if (shouldNotify) {
         notifyMultiChannel(browser.i18n.getMessage('uploadBookmarks'), results);
       }
 
-    }
-    catch (error: any) {
+    } catch (error: any) {
       console.error(error);
       if (results.length > 0) {
         notifyMultiChannel(browser.i18n.getMessage('uploadBookmarks'), results);
@@ -389,7 +394,7 @@ export default defineBackground(() => {
   async function downloadBookmarks() {
     const results: { service: string, success: boolean, error?: string }[] = [];
     try {
-      let setting = await Setting.build()
+      const setting = await Setting.build()
       const cloudTrees: BookmarkInfo[][] = [];
       const downloadTasks = [];
 
@@ -432,16 +437,17 @@ export default defineBackground(() => {
       await Promise.all(downloadTasks);
 
       if (cloudTrees.length > 0) {
-        // 合并所有云端来源
         let mergedCloudBookmarks: BookmarkInfo[] = [];
         cloudTrees.forEach(tree => {
           mergedCloudBookmarks = mergeBookmarkTrees(mergedCloudBookmarks, tree);
         });
 
+        // 下载后先纠偏
+        mergedCloudBookmarks = normalizeImportedRoots(mergedCloudBookmarks);
+
         await clearBookmarkTree();
         await createBookmarkTree(mergedCloudBookmarks);
 
-        // 预热图标
         if (setting.fetchFavicon) {
           prefetchFavicons(mergedCloudBookmarks);
         }
@@ -456,8 +462,7 @@ export default defineBackground(() => {
       else {
         notifyMultiChannel(browser.i18n.getMessage('downloadBookmarks'), results);
       }
-    }
-    catch (error: any) {
+    } catch (error: any) {
       console.error(error);
       if (results.length > 0) {
         notifyMultiChannel(browser.i18n.getMessage('downloadBookmarks'), results);
@@ -473,11 +478,10 @@ export default defineBackground(() => {
   }
 
   async function getBookmarks() {
-    let bookmarkTree: BookmarkInfo[] = await browser.bookmarks.getTree();
+    const bookmarkTree: BookmarkInfo[] = await browser.bookmarks.getTree();
     if (bookmarkTree && bookmarkTree[0].id === "root________") {
       curBrowserType = BrowserType.FIREFOX;
-    }
-    else {
+    } else {
       curBrowserType = BrowserType.CHROME;
     }
     return bookmarkTree;
@@ -485,16 +489,16 @@ export default defineBackground(() => {
 
   async function clearBookmarkTree() {
     try {
-      let setting = await Setting.build()
-      let bookmarks = await getBookmarks();
-      let tempNodes: BookmarkInfo[] = [];
+      const setting = await Setting.build()
+      const bookmarks = await getBookmarks();
+      const tempNodes: BookmarkInfo[] = [];
       bookmarks[0].children?.forEach(c => {
         c.children?.forEach(d => {
           tempNodes.push(d)
         })
       });
       if (tempNodes.length > 0) {
-        for (let node of tempNodes) {
+        for (const node of tempNodes) {
           if (node.id) {
             await browser.bookmarks.removeTree(node.id)
           }
@@ -508,8 +512,7 @@ export default defineBackground(() => {
           message: browser.i18n.getMessage('success')
         });
       }
-    }
-    catch (error: any) {
+    } catch (error: any) {
       console.error(error);
       await browser.notifications.create({
         type: "basic",
@@ -520,58 +523,189 @@ export default defineBackground(() => {
     }
   }
 
-  async function createBookmarkTree(bookmarkList: BookmarkInfo[] | undefined) {
-    if (bookmarkList == null) {
-      return;
+  function normalizeRootType(raw?: string): RootTypeValue {
+    if (!raw) return undefined;
+    const t = String(raw).toLowerCase().trim();
+
+    if (
+      t === RootBookmarksType.ToolbarFolder.toLowerCase() ||
+      t === 'bookmark_bar' ||
+      t === 'toolbar' ||
+      t === 'bookmarks bar' ||
+      t === '书签栏'
+    ) return RootBookmarksType.ToolbarFolder;
+
+    if (
+      t === RootBookmarksType.UnfiledFolder.toLowerCase() ||
+      t === 'other' ||
+      t === 'other bookmarks' ||
+      t === 'unfiled' ||
+      t === '其他书签'
+    ) return RootBookmarksType.UnfiledFolder;
+
+    if (
+      t === RootBookmarksType.MobileFolder.toLowerCase() ||
+      t === 'mobile' ||
+      t === 'mobile bookmarks' ||
+      t === '移动书签'
+    ) return RootBookmarksType.MobileFolder;
+
+    if (
+      t === RootBookmarksType.MenuFolder.toLowerCase() ||
+      t === 'menu' ||
+      t === 'bookmarks menu' ||
+      t === '书签菜单'
+    ) return RootBookmarksType.MenuFolder;
+
+    return undefined;
+  }
+
+  // 纠偏：把“其他书签里嵌套的书签栏/其他书签”提升为根层
+  function normalizeImportedRoots(bookmarkList: BookmarkInfo[] | undefined): BookmarkInfo[] {
+    if (!bookmarkList || bookmarkList.length === 0) return [];
+
+    // 深拷贝，避免副作用
+    const nodes = JSON.parse(JSON.stringify(bookmarkList)) as BookmarkNodeWithRoot[];
+
+    const rootBuckets = {
+      toolbar: undefined as BookmarkNodeWithRoot | undefined,
+      unfiled: undefined as BookmarkNodeWithRoot | undefined,
+      mobile: undefined as BookmarkNodeWithRoot | undefined,
+      menu: undefined as BookmarkNodeWithRoot | undefined
+    };
+
+    const others: BookmarkNodeWithRoot[] = [];
+
+    const getBucketKey = (node: BookmarkNodeWithRoot): keyof typeof rootBuckets | undefined => {
+      const byRootType = normalizeRootType(String(node.rootType || ''));
+      const byTitle = normalizeRootType(node.title || '');
+
+      const v = byRootType || byTitle;
+      if (!v) return undefined;
+      if (v === RootBookmarksType.ToolbarFolder) return 'toolbar';
+      if (v === RootBookmarksType.UnfiledFolder) return 'unfiled';
+      if (v === RootBookmarksType.MobileFolder) return 'mobile';
+      if (v === RootBookmarksType.MenuFolder) return 'menu';
+      return undefined;
+    };
+
+    const upsertRootNode = (incoming: BookmarkNodeWithRoot) => {
+      const key = getBucketKey(incoming);
+      if (!key) {
+        others.push(incoming);
+        return;
+      }
+
+      // 统一根节点 title/rootType
+      if (key === 'toolbar') {
+        incoming.title = RootBookmarksType.ToolbarFolder;
+        incoming.rootType = RootBookmarksType.ToolbarFolder;
+      } else if (key === 'unfiled') {
+        incoming.title = RootBookmarksType.UnfiledFolder;
+        incoming.rootType = RootBookmarksType.UnfiledFolder;
+      } else if (key === 'mobile') {
+        incoming.title = RootBookmarksType.MobileFolder;
+        incoming.rootType = RootBookmarksType.MobileFolder;
+      } else if (key === 'menu') {
+        incoming.title = RootBookmarksType.MenuFolder;
+        incoming.rootType = RootBookmarksType.MenuFolder;
+      }
+
+      const existing = rootBuckets[key];
+      if (!existing) {
+        rootBuckets[key] = incoming;
+      } else {
+        existing.children = mergeBookmarkTrees(existing.children || [], incoming.children || []) as BookmarkInfo[];
+      }
+    };
+
+    // 先处理顶层
+    for (const n of nodes) {
+      upsertRootNode(n);
     }
-    for (let i = 0; i < bookmarkList.length; i++) {
-      let node = bookmarkList[i];
-      if (node.title == RootBookmarksType.MenuFolder
-        || node.title == RootBookmarksType.MobileFolder
-        || node.title == RootBookmarksType.ToolbarFolder
-        || node.title == RootBookmarksType.UnfiledFolder) {
-        if (curBrowserType == BrowserType.FIREFOX) {
-          switch (node.title) {
-            case RootBookmarksType.MenuFolder:
-              node.children?.forEach(c => c.parentId = "menu________");
-              break;
-            case RootBookmarksType.MobileFolder:
-              node.children?.forEach(c => c.parentId = "mobile______");
-              break;
-            case RootBookmarksType.ToolbarFolder:
-              node.children?.forEach(c => c.parentId = "toolbar_____");
-              break;
-            case RootBookmarksType.UnfiledFolder:
-              node.children?.forEach(c => c.parentId = "unfiled_____");
-              break;
-            default:
-              node.children?.forEach(c => c.parentId = "unfiled_____");
-              break;
-          }
+
+    // 处理“其他书签里套根目录”
+    const unfiled = rootBuckets.unfiled;
+    if (unfiled?.children?.length) {
+      const remain: BookmarkNodeWithRoot[] = [];
+
+      for (const child of unfiled.children as BookmarkNodeWithRoot[]) {
+        const key = getBucketKey(child);
+        if (key) {
+          upsertRootNode(child);
         } else {
-          switch (node.title) {
+          remain.push(child);
+        }
+      }
+
+      unfiled.children = remain;
+    }
+
+    const finalList: BookmarkNodeWithRoot[] = [];
+    if (rootBuckets.toolbar) finalList.push(rootBuckets.toolbar);
+    if (rootBuckets.unfiled) finalList.push(rootBuckets.unfiled);
+    if (rootBuckets.mobile) finalList.push(rootBuckets.mobile);
+    if (rootBuckets.menu) finalList.push(rootBuckets.menu);
+    finalList.push(...others);
+
+    return finalList as BookmarkInfo[];
+  }
+
+  async function createBookmarkTree(bookmarkList: BookmarkInfo[] | undefined) {
+    if (bookmarkList == null) return;
+
+    for (let i = 0; i < bookmarkList.length; i++) {
+      const node = bookmarkList[i] as BookmarkNodeWithRoot;
+
+      const rootByType = normalizeRootType(String(node.rootType || ''));
+      const rootByTitle = normalizeRootType(node.title || '');
+      const rootType = rootByType || rootByTitle;
+
+      const isRootFolder = !!rootType && !node.url;
+
+      if (isRootFolder) {
+        if (curBrowserType == BrowserType.FIREFOX) {
+          let parentId = "unfiled_____";
+          switch (rootType) {
+            case RootBookmarksType.MenuFolder:
+              parentId = "menu________";
+              break;
             case RootBookmarksType.MobileFolder:
-              node.children?.forEach(c => c.parentId = "3");
+              parentId = "mobile______";
               break;
             case RootBookmarksType.ToolbarFolder:
-              node.children?.forEach(c => c.parentId = "1");
+              parentId = "toolbar_____";
+              break;
+            case RootBookmarksType.UnfiledFolder:
+            default:
+              parentId = "unfiled_____";
+              break;
+          }
+          node.children?.forEach(c => c.parentId = parentId);
+        } else {
+          let parentId = "2";
+          switch (rootType) {
+            case RootBookmarksType.MobileFolder:
+              parentId = "3";
+              break;
+            case RootBookmarksType.ToolbarFolder:
+              parentId = "1";
               break;
             case RootBookmarksType.UnfiledFolder:
             case RootBookmarksType.MenuFolder:
-              node.children?.forEach(c => c.parentId = "2");
-              break;
             default:
-              node.children?.forEach(c => c.parentId = "2");
+              parentId = "2";
               break;
           }
+          node.children?.forEach(c => c.parentId = parentId);
         }
+
         await createBookmarkTree(node.children);
         continue;
       }
 
       let res: Bookmarks.BookmarkTreeNode = { id: '', title: '' };
       try {
-        /* 处理firefox中创建 chrome://chrome-urls/ 格式的书签会报错的问题 */
         res = await browser.bookmarks.create({
           parentId: node.parentId,
           title: node.title,
@@ -580,6 +714,7 @@ export default defineBackground(() => {
       } catch (err) {
         console.error(res, err);
       }
+
       if (res.id && node.children && node.children.length > 0) {
         node.children.forEach(c => c.parentId = res.id);
         await createBookmarkTree(node.children);
@@ -593,8 +728,7 @@ export default defineBackground(() => {
       bookmarkList.forEach(c => {
         if (c.url) {
           count = count + 1;
-        }
-        else {
+        } else {
           count = count + getBookmarkCount(c.children);
         }
       });
@@ -603,69 +737,61 @@ export default defineBackground(() => {
   }
 
   async function refreshLocalCount() {
-    let bookmarkList = await getBookmarks();
+    const bookmarkList = await getBookmarks();
     const count = getBookmarkCount(bookmarkList);
     await browser.storage.local.set({ localCount: count });
   }
 
-
+  // 关键修复：不修改原始树，深拷贝 + 新对象输出 + rootType稳定映射
   function formatBookmarks(bookmarks: BookmarkInfo[]): BookmarkInfo[] | undefined {
-    if (bookmarks[0].children) {
-      for (let a of bookmarks[0].children) {
-        switch (a.id) {
+    if (!bookmarks?.[0]) return [];
+
+    const root = JSON.parse(JSON.stringify(bookmarks[0])) as BookmarkNodeWithRoot;
+
+    // 根层打 rootType 标记（不改展示 title）
+    if (root.children) {
+      for (const child of root.children as BookmarkNodeWithRoot[]) {
+        switch (child.id) {
           case "1":
           case "toolbar_____":
-            a.title = RootBookmarksType.ToolbarFolder;
+            child.rootType = RootBookmarksType.ToolbarFolder;
             break;
           case "menu________":
-            a.title = RootBookmarksType.MenuFolder;
+            child.rootType = RootBookmarksType.MenuFolder;
             break;
           case "2":
           case "unfiled_____":
-            a.title = RootBookmarksType.UnfiledFolder;
+            child.rootType = RootBookmarksType.UnfiledFolder;
             break;
           case "3":
           case "mobile______":
-            a.title = RootBookmarksType.MobileFolder;
+            child.rootType = RootBookmarksType.MobileFolder;
+            break;
+          default:
+            child.rootType = normalizeRootType(child.title || '');
             break;
         }
       }
     }
 
-    let a = format(bookmarks[0]);
-    return a.children;
+    const normalized = format(root) as BookmarkNodeWithRoot;
+    return normalized.children;
   }
 
-  function format(b: BookmarkInfo): BookmarkInfo {
-    b.dateAdded = undefined;
-    b.dateGroupModified = undefined;
-    b.id = undefined;
-    b.index = undefined;
-    b.parentId = undefined;
-    b.type = undefined;
-    b.unmodifiable = undefined;
+  function format(b: BookmarkNodeWithRoot): BookmarkNodeWithRoot {
+    const out: BookmarkNodeWithRoot = {
+      title: b.title,
+      url: b.url
+    };
+
+    if (b.rootType) out.rootType = b.rootType;
+
     if (b.children && b.children.length > 0) {
-      b.children?.map(c => format(c))
+      out.children = b.children.map(c => format(c as BookmarkNodeWithRoot));
     }
-    return b;
+
+    return out;
   }
-  ///暂时不启用自动备份
-  /*
-  async function backupToLocalStorage(bookmarks: BookmarkInfo[]) {
-      try {
-          let syncdata = new SyncDataInfo();
-          syncdata.version = browser.runtime.getManifest().version;
-          syncdata.createDate = Date.now();
-          syncdata.bookmarks = formatBookmarks(bookmarks);
-          syncdata.browser = navigator.userAgent;
-          const keyname = 'BookmarkHub_backup_' + Date.now().toString();
-          await browser.storage.local.set({ [keyname]: JSON.stringify(syncdata) });
-      }
-      catch (error:any) {
-          console.error(error)
-      }
-  }
-  */
 
   // 从临时存储导入书签
   async function importBookmarksFromStorage() {
@@ -682,8 +808,11 @@ export default defineBackground(() => {
       // 先清空现有书签
       await clearBookmarkTree();
 
+      // 导入前纠偏
+      const normalized = normalizeImportedRoots(importData.bookmarks);
+
       // 创建导入的书签
-      await createBookmarkTree(importData.bookmarks);
+      await createBookmarkTree(normalized);
 
       // 清理临时存储
       await browser.storage.local.remove('pendingImport');
@@ -692,7 +821,7 @@ export default defineBackground(() => {
       browser.action.setBadgeText({ text: "" });
 
       // 发送通知
-      let setting = await Setting.build();
+      const setting = await Setting.build();
       if (setting.enableNotify) {
         await browser.notifications.create({
           type: "basic",
@@ -719,7 +848,6 @@ export default defineBackground(() => {
     const urls = extractUrls(bookmarks);
     const uniqueOrigins = new Set<string>();
 
-    // 提取唯一来源（协议+域名）
     urls.forEach(url => {
       try {
         const urlObj = new URL(url);
@@ -727,13 +855,11 @@ export default defineBackground(() => {
           uniqueOrigins.add(urlObj.origin);
         }
       } catch (e) {
-        // 无效 URL，跳过
       }
     });
 
     const origins = Array.from(uniqueOrigins);
 
-    // 限制最大数量，避免打开太多标签
     const maxSites = 50;
     const sitesToLoad = origins.slice(0, maxSites);
 
@@ -741,7 +867,6 @@ export default defineBackground(() => {
 
     console.log(`[BookmarkHub] Loading favicons for ${sitesToLoad.length} sites (max ${maxSites})...`);
 
-    // 等待标签页加载完成的函数
     const waitForTabLoad = (tabId: number, timeout: number = 10000): Promise<void> => {
       return new Promise((resolve) => {
         let resolved = false;
@@ -751,7 +876,6 @@ export default defineBackground(() => {
             if (!resolved) {
               resolved = true;
               browser.tabs.onUpdated.removeListener(listener);
-              // 页面加载完成后再等待 1 秒确保 favicon 被加载
               setTimeout(resolve, 1000);
             }
           }
@@ -759,7 +883,6 @@ export default defineBackground(() => {
 
         browser.tabs.onUpdated.addListener(listener);
 
-        // 超时保护
         setTimeout(() => {
           if (!resolved) {
             resolved = true;
@@ -770,12 +893,10 @@ export default defineBackground(() => {
       });
     };
 
-    // 使用并发队列处理
     let loadedCount = 0;
     const setting = await Setting.build();
     const concurrency = setting.faviconConcurrency || 3;
 
-    // 处理单个站点的函数
     const loadSite = async (origin: string): Promise<void> => {
       try {
         const tab = await browser.tabs.create({
@@ -797,7 +918,6 @@ export default defineBackground(() => {
       }
     };
 
-    // 并发控制队列
     const queue = [...sitesToLoad];
     const workers: Promise<void>[] = [];
 
@@ -810,17 +930,14 @@ export default defineBackground(() => {
       }
     };
 
-    // 启动多个 worker
     for (let i = 0; i < Math.min(concurrency, sitesToLoad.length); i++) {
       workers.push(worker());
     }
 
-    // 等待所有 worker 完成
     await Promise.all(workers);
 
     console.log(`[BookmarkHub] Favicon prefetch completed: ${loadedCount} sites loaded`);
 
-    // 显示通知
     if (setting.enableNotify) {
       await browser.notifications.create({
         type: "basic",
@@ -831,7 +948,6 @@ export default defineBackground(() => {
     }
   }
 
-  // 从书签树中提取所有 URL
   function extractUrls(bookmarks: BookmarkInfo[]): string[] {
     const urls: string[] = [];
 
@@ -849,5 +965,4 @@ export default defineBackground(() => {
     traverse(bookmarks);
     return urls;
   }
-
 });
