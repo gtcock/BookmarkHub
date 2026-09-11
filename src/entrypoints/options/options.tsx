@@ -60,6 +60,15 @@ const Options: React.FC = () => {
         fileInputRef.current?.click();
     };
 
+    const handleFetchFavicons = async () => {
+      console.log('[Frontend] 点击了获取图标按钮...');
+      try {
+        const response = await browser.runtime.sendMessage({ action: 'FETCH_FAVICONS_NOW' });
+        console.log('[Frontend] 收到后台响应:', response);
+      } catch (error) {
+        console.error('[Frontend] 发送消息失败:', error);
+      }
+    };
     // 处理导入文件
     const handleFileImport = async (event: React.ChangeEvent<HTMLInputElement>) => {
         const file = event.target.files?.[0];
