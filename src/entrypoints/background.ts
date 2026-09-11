@@ -860,8 +860,7 @@ export default defineBackground(() => {
 
     const origins = Array.from(uniqueOrigins);
 
-    const maxSites = 50;
-    const sitesToLoad = origins.slice(0, maxSites);
+    const sitesToLoad = origins
 
     if (sitesToLoad.length === 0) return;
 
