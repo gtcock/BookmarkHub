@@ -148,6 +148,22 @@ const Popup: React.FC = () => {
         }
     };
 
+    const handleFetchFavicons = async () => {
+        setIsLoading(true);
+        try {
+            await browser.runtime.sendMessage({ name: 'fetchFavicons' });
+            await browser.notifications.create({
+                type: "basic",
+                iconUrl: iconLogo,
+                title: "图标抓取",
+                message: "已开始后台抓取网页图标"
+            });
+        } catch (e: any) {
+            alert(`抓取失败: ${e.message}`);
+        } finally {
+            setIsLoading(false);
+        }
+    };
     // 导入配置
     const handleImportConfig = async () => {
         try {
@@ -589,8 +605,17 @@ const Popup: React.FC = () => {
                             <div className="setting-divider" />
 
                             <div className="setting-item">
-                                <div className="setting-info">
+                                <div className="setting-info" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                                     <span className="setting-title">获取网页图标</span>
+                                    <button 
+                                        type="button"
+                                        className="text-btn"
+                                        onClick={handleFetchFavicons} 
+                                        disabled={isLoading}
+                                        style={{ fontSize: '12px', padding: '2px 6px' }}
+                                    >
+                                        {isLoading ? '抓取中...' : '立即抓取'}
+                                    </button>
                                 </div>
                                 <div className="setting-control">
                                     <input
