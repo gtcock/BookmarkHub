@@ -362,7 +362,7 @@ const Popup: React.FC = () => {
                             </button>
 
                             <div className="menu-footer">
-                                <a href="https://github.com/iwvw/BookmarkHub" target="_blank" className="footer-icon-link" title={browser.i18n.getMessage('help')}>
+                                <a href="https://github.com/gtcock/BookmarkHub" target="_blank" className="footer-icon-link" title={browser.i18n.getMessage('help')}>
                                     <AiOutlineInfoCircle />
                                 </a>
                                 <div className="footer-stats-grid">
@@ -375,7 +375,7 @@ const Popup: React.FC = () => {
                                         <span className="stat-value">{count["remote"]}</span>
                                     </div>
                                 </div>
-                                <a href="https://github.com/iwvw" target="_blank" className="github-link"><AiOutlineGithub /></a>
+                                <a href="https://github.com/gtcock" target="_blank" className="github-link"><AiOutlineGithub /></a>
                             </div>
                         </div>
                     </div>
