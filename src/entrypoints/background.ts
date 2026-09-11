@@ -902,7 +902,7 @@ export default defineBackground(() => {
 
     let loadedCount = 0;
     const setting = await Setting.build();
-    const concurrency = setting.faviconConcurrency || 3;
+    const concurrency = setting.faviconConcurrency || 2;
 
     const loadSite = async (origin: string): Promise<void> => {
       try {
@@ -912,10 +912,16 @@ export default defineBackground(() => {
         });
 
         if (tab.id) {
-          await waitForTabLoad(tab.id, 10000);
-          try {
+          await waitForTabLoad(tab.id, 12000);
+            // 关键：再等 favicon 出现（最多15秒）
+          const gotIcon = await waitForFavicon(tab.id, 15000);
+          // 如果没拿到图标，也再给一点缓冲（有些站点非常慢）
+          if (!gotIcon) {
+            await new Promise(r => setTimeout(r, 1500));
+          }
+          // try {
             await browser.tabs.remove(tab.id);
-          } catch (e) { }
+          } catch (e) {}
         }
 
         loadedCount++;
@@ -955,6 +961,28 @@ export default defineBackground(() => {
     }
   }
 
+  async function waitForFavicon(tabId: number, maxWaitMs = 15000): Promise<boolean> {
+      const start = Date.now();
+
+      while (Date.now() - start < maxWaitMs) {
+        try {
+          const tab = await browser.tabs.get(tabId);
+
+          // Chrome/Firefox 都有 favIconUrl（有些站会很晚才有）
+          if (tab.favIconUrl && /^https?:|^data:/.test(tab.favIconUrl)) {
+            return true;
+          }
+        } catch (e) {
+          return false;
+        }
+
+        // 轮询间隔
+        await new Promise(r => setTimeout(r, 500));
+      }
+
+      return false;
+  }
+
   function extractUrls(bookmarks: BookmarkInfo[]): string[] {
     const urls: string[] = [];
 
@@ -972,15 +1000,5 @@ export default defineBackground(() => {
     traverse(bookmarks);
     return urls;
   }
-  
-  browser.runtime.onMessage.addListener((msg, sender, sendResponse) => {
-      console.log('[Background] 收到消息:', msg);
-      if (msg.action === 'FETCH_FAVICONS_NOW') {
-        console.log('[Background] 开始执行抓取...');
-        // 强制先弹出一个 log
-        sendResponse({ status: 'ok' });
-        return true;
-      }
-  });
   
 });
