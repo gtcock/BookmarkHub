@@ -75,6 +75,25 @@ export default defineBackground(() => {
   let curBrowserType = BrowserType.CHROME;
 
   browser.runtime.onMessage.addListener((msg, sender, sendResponse) => {
+    // 监听手动抓取网页图标指令
+    if (msg.name === 'fetchFavicons' || msg.action === 'FETCH_FAVICONS_NOW') {
+      (async () => {
+        try {
+          const bookmarks = await getBookmarks();
+          const formatted = formatBookmarks(bookmarks);
+          if (formatted) {
+            // 开始后台抓取图标
+            prefetchFavicons(formatted);
+          }
+          sendResponse(true);
+        } catch (err) {
+          console.error('[BookmarkHub] Fetch favicons error:', err);
+          sendResponse(false);
+        }
+      })();
+      return true; // 保持异步响应通道开启
+    }
+
     if (msg.name === 'upload') {
       curOperType = OperType.SYNC
       uploadBookmarks().then(() => {
@@ -92,7 +111,6 @@ export default defineBackground(() => {
         refreshLocalCount();
         sendResponse(true);
       });
-
     }
     if (msg.name === 'removeAll') {
       curOperType = OperType.REMOVE
@@ -102,7 +120,6 @@ export default defineBackground(() => {
         refreshLocalCount();
         sendResponse(true);
       });
-
     }
     if (msg.name === 'setting') {
       browser.runtime.openOptionsPage().then(() => {
@@ -201,11 +218,6 @@ export default defineBackground(() => {
       // 4. 更新本地
       await clearBookmarkTree();
       await createBookmarkTree(finalMergedBookmarks);
-
-      // 4.5 预热图标
-      if (setting.fetchFavicon) {
-        prefetchFavicons(finalMergedBookmarks);
-      }
 
       // 5. 将最终结果推送到所有服务
       const finalSyncData = new SyncDataInfo();
@@ -447,10 +459,6 @@ export default defineBackground(() => {
 
         await clearBookmarkTree();
         await createBookmarkTree(mergedCloudBookmarks);
-
-        if (setting.fetchFavicon) {
-          prefetchFavicons(mergedCloudBookmarks);
-        }
 
         const count = getBookmarkCount(mergedCloudBookmarks);
         await browser.storage.local.set({ remoteCount: count });
@@ -864,7 +872,7 @@ export default defineBackground(() => {
 
     if (sitesToLoad.length === 0) return;
 
-    console.log(`[BookmarkHub] Loading favicons for ${sitesToLoad.length} sites (max ${maxSites})...`);
+    console.log(`[BookmarkHub] Loading favicons for ${sitesToLoad.length} sites ...`);
 
     const waitForTabLoad = (tabId: number, timeout: number = 10000): Promise<void> => {
       return new Promise((resolve) => {
@@ -964,4 +972,15 @@ export default defineBackground(() => {
     traverse(bookmarks);
     return urls;
   }
+  
+  browser.runtime.onMessage.addListener((msg, sender, sendResponse) => {
+      console.log('[Background] 收到消息:', msg);
+      if (msg.action === 'FETCH_FAVICONS_NOW') {
+        console.log('[Background] 开始执行抓取...');
+        // 强制先弹出一个 log
+        sendResponse({ status: 'ok' });
+        return true;
+      }
+  });
+  
 });
