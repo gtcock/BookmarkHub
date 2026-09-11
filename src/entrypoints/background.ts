@@ -902,7 +902,7 @@ export default defineBackground(() => {
 
     let loadedCount = 0;
     const setting = await Setting.build();
-    const concurrency = setting.faviconConcurrency || 2;
+    const concurrency = setting.faviconConcurrency || 3;
 
     const loadSite = async (origin: string): Promise<void> => {
       try {
@@ -919,7 +919,7 @@ export default defineBackground(() => {
           if (!gotIcon) {
             await new Promise(r => setTimeout(r, 1500));
           }
-          // try {
+          try {
             await browser.tabs.remove(tab.id);
           } catch (e) {}
         }
