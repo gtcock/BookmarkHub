@@ -56,6 +56,21 @@ export default defineBackground(() => {
     }
   }
 
+  function isMobileBrowser(): boolean {
+      const ua = navigator.userAgent.toLowerCase();
+      return /android|iphone|ipad|ipod|mobile/.test(ua);
+  }
+
+  function getRootFolderDisplayTitle(rootType: RootTypeValue): string {
+      switch (rootType) {
+        case RootBookmarksType.ToolbarFolder: return '书签栏';
+        case RootBookmarksType.UnfiledFolder: return '其他书签';
+        case RootBookmarksType.MobileFolder: return '移动设备书签';
+        case RootBookmarksType.MenuFolder: return '书签菜单';
+        default: return 'Bookmarks';
+      }
+  }
+
   // 监听定时器触发
   browser.alarms.onAlarm.addListener(async (alarm) => {
     if (alarm.name === AUTO_SYNC_ALARM_NAME) {
@@ -668,50 +683,53 @@ export default defineBackground(() => {
       const rootByType = normalizeRootType(String(node.rootType || ''));
       const rootByTitle = normalizeRootType(node.title || '');
       const rootType = rootByType || rootByTitle;
-
       const isRootFolder = !!rootType && !node.url;
 
       if (isRootFolder) {
         if (curBrowserType == BrowserType.FIREFOX) {
           let parentId = "unfiled_____";
           switch (rootType) {
-            case RootBookmarksType.MenuFolder:
-              parentId = "menu________";
-              break;
-            case RootBookmarksType.MobileFolder:
-              parentId = "mobile______";
-              break;
-            case RootBookmarksType.ToolbarFolder:
-              parentId = "toolbar_____";
-              break;
-            case RootBookmarksType.UnfiledFolder:
-            default:
-              parentId = "unfiled_____";
-              break;
+            case RootBookmarksType.MenuFolder: parentId = "menu________"; break;
+            case RootBookmarksType.MobileFolder: parentId = "mobile______"; break;
+            case RootBookmarksType.ToolbarFolder: parentId = "toolbar_____"; break;
+            default: parentId = "unfiled_____"; break;
           }
           node.children?.forEach(c => c.parentId = parentId);
+          await createBookmarkTree(node.children);
+
+        } else if (isMobileBrowser()) {
+          // ★ 跳过 MobileFolder，避免在 id="3" 下创建冗余的"移动设备书签"文件夹
+          if (rootType === RootBookmarksType.MobileFolder) {
+            continue;
+          }
+          // ★ 手机端：在 Mobile Bookmarks(id="3") 下创建子文件夹，保证可见
+          if (node.children && node.children.length > 0) {
+            const folderTitle = getRootFolderDisplayTitle(rootType);
+            const folderRes = await browser.bookmarks.create({
+              parentId: "3",
+              title: folderTitle,
+            });
+            if (folderRes.id) {
+              node.children.forEach(c => c.parentId = folderRes.id);
+              await createBookmarkTree(node.children);
+            }
+          }
+
         } else {
+          // 桌面端：原逻辑不变
           let parentId = "2";
           switch (rootType) {
-            case RootBookmarksType.MobileFolder:
-              parentId = "3";
-              break;
-            case RootBookmarksType.ToolbarFolder:
-              parentId = "1";
-              break;
-            case RootBookmarksType.UnfiledFolder:
-            case RootBookmarksType.MenuFolder:
-            default:
-              parentId = "2";
-              break;
+            case RootBookmarksType.MobileFolder: parentId = "3"; break;
+            case RootBookmarksType.ToolbarFolder: parentId = "1"; break;
+            default: parentId = "2"; break;
           }
           node.children?.forEach(c => c.parentId = parentId);
+          await createBookmarkTree(node.children);
         }
-
-        await createBookmarkTree(node.children);
         continue;
       }
 
+      // 非根文件夹/书签 — 创建
       let res: Bookmarks.BookmarkTreeNode = { id: '', title: '' };
       try {
         res = await browser.bookmarks.create({
@@ -720,7 +738,17 @@ export default defineBackground(() => {
           url: node.url
         });
       } catch (err) {
-        console.error(res, err);
+        console.error(`[BookmarkHub] Create failed: "${node.title}"`, err);
+        // 降级
+        if (node.url) {
+          try {
+            res = await browser.bookmarks.create({
+              parentId: isMobileBrowser() ? "3" : "2",
+              title: node.title,
+              url: node.url
+            });
+          } catch (e2) { console.error('[BookmarkHub] Fallback failed:', e2); }
+        }
       }
 
       if (res.id && node.children && node.children.length > 0) {
@@ -779,6 +807,35 @@ export default defineBackground(() => {
             child.rootType = normalizeRootType(child.title || '');
             break;
         }
+      }
+    }
+
+    // ★ 手机端纠偏：把 Mobile Bookmarks(id="3") 下的 "书签栏"/"其他书签" 提升为根层
+    if (isMobileBrowser() && root.children) {
+      const mobileNode = root.children.find(
+        c => c.id === "3" || c.rootType === RootBookmarksType.MobileFolder
+      ) as BookmarkNodeWithRoot | undefined;
+
+      if (mobileNode?.children?.length) {
+        const promoted: BookmarkNodeWithRoot[] = [];
+        const remaining: BookmarkNodeWithRoot[] = [];
+
+        for (const child of mobileNode.children as BookmarkNodeWithRoot[]) {
+          const key = normalizeRootType(child.title || '');
+          if (key && !child.url) {
+            child.rootType = key;
+            child.title = key;
+            promoted.push(child);
+          } else {
+            remaining.push(child);
+          }
+        }
+
+        mobileNode.children = remaining;
+        if (remaining.length === 0) {
+          root.children = root.children.filter(c => c !== mobileNode);
+        }
+        root.children.push(...promoted);
       }
     }
 
